@@ -1,0 +1,18 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M28 176C39 191 64 210 100 218C151 229 201 211 227 188" stroke="#FFD27A" stroke-width="18" stroke-linecap="round"/>
+  <path d="M54 42C44 69 42 101 48 136C56 183 87 210 126 210C170 210 205 182 212 134C219 89 198 53 159 43C131 36 107 47 92 64C77 48 66 40 54 42Z" fill="#FF8A4C"/>
+  <path d="M64 53C54 79 53 106 58 133C65 173 91 198 126 198C164 198 193 173 200 132C206 96 189 67 158 58C133 50 112 59 98 76C83 61 73 53 64 53Z" fill="#FFFDF8"/>
+  <path d="M82 61C72 70 66 86 66 107C66 135 82 157 104 167C117 173 123 182 125 194" stroke="#2A5B45" stroke-width="10" stroke-linecap="round"/>
+  <path d="M170 66C182 76 189 92 189 113C189 141 173 161 151 171C138 177 132 186 130 196" stroke="#2A5B45" stroke-width="10" stroke-linecap="round"/>
+  <path d="M126 77C137 63 154 56 172 58C191 60 204 72 209 90" stroke="#D45A2E" stroke-width="7" stroke-linecap="round"/>
+  <path d="M126 77C113 62 97 56 80 58C61 60 48 73 44 92" stroke="#D45A2E" stroke-width="7" stroke-linecap="round"/>
+  <path d="M101 103C110 96 120 93 130 93C140 93 149 96 157 103" stroke="#243B2F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M95 127C103 134 114 138 126 138C138 138 149 134 157 127" stroke="#243B2F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M93 109C97 109 100 112 100 116C100 120 97 123 93 123C89 123 86 120 86 116C86 112 89 109 93 109Z" fill="#243B2F"/>
+  <path d="M159 109C163 109 166 112 166 116C166 120 163 123 159 123C155 123 152 120 152 116C152 112 155 109 159 109Z" fill="#243B2F"/>
+  <path d="M77 169C87 177 103 182 126 182C149 182 168 177 179 168" stroke="#FF8A4C" stroke-width="8" stroke-linecap="round"/>
+  <path d="M86 34L97 51" stroke="#243B2F" stroke-width="9" stroke-linecap="round"/>
+  <path d="M164 33L154 52" stroke="#243B2F" stroke-width="9" stroke-linecap="round"/>
+  <path d="M34 185C29 190 25 198 24 209" stroke="#243B2F" stroke-width="8" stroke-linecap="round"/>
+  <path d="M223 185C228 190 232 198 233 209" stroke="#243B2F" stroke-width="8" stroke-linecap="round"/>
+</svg>

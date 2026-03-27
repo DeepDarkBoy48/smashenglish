@@ -1,0 +1,154 @@
+:root {
+  color-scheme: light;
+  --bg: #f3efe8;
+  --card: #fcfaf6;
+  --line: #d8d1c6;
+  --text: #312f2a;
+  --muted: #7b746b;
+  --accent: #8d6d4f;
+  --accent-strong: #6f5340;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #181b21;
+  --card: #232933;
+  --line: #353d48;
+  --text: #ece5dc;
+  --muted: #a29b91;
+  --accent: #d1b18d;
+  --accent-strong: #b5906a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 300px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Sans SC", "Source Han Sans SC", "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+body {
+  padding: 10px;
+}
+
+button {
+  font: inherit;
+}
+
+.popup-shell {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.62) 0%, rgba(255, 255, 255, 0) 34%),
+    var(--card);
+  padding: 14px;
+  box-shadow: 0 16px 32px rgba(120, 108, 94, 0.1);
+}
+
+.popup-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.popup-logo {
+  width: 34px;
+  height: 34px;
+  display: block;
+  flex: none;
+}
+
+.popup-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.popup-head h1 {
+  margin: 2px 0 0;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.popup-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.menu-btn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.52);
+  padding: 12px 14px;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  transition: border-color 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.menu-btn:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.menu-btn.primary {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fffdf8;
+  border-color: transparent;
+}
+
+.menu-btn.primary .menu-copy {
+  color: rgba(255, 253, 248, 0.82);
+}
+
+.menu-title {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.menu-copy {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+.popup-status {
+  min-height: 18px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.popup-status.error {
+  color: #d65c76;
+}
+
+[data-theme="dark"] .popup-shell {
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 34%),
+    var(--card);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.24);
+}
+
+[data-theme="dark"] .menu-btn {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+[data-theme="dark"] .menu-btn.primary {
+  color: #1f1913;
+}
+
+[data-theme="dark"] .menu-btn.primary .menu-copy {
+  color: rgba(31, 25, 19, 0.82);
+}

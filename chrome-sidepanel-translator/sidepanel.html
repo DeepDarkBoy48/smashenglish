@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmashEnglish Side Panel</title>
+    <link rel="stylesheet" href="./sidepanel.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="tabs">
+          <button type="button" class="tab" data-tab="translate">翻译</button>
+          <button type="button" class="tab" data-tab="analysis">句法分析</button>
+          <button type="button" class="tab active" data-tab="word-card">单词卡片</button>
+        </div>
+        <div class="topbar-actions">
+          <div class="menu-wrap">
+            <button
+              type="button"
+              id="panel-menu-btn"
+              class="ghost-btn topbar-btn"
+              aria-haspopup="menu"
+              aria-expanded="false"
+              aria-controls="panel-menu"
+            >
+              更多
+            </button>
+            <div id="panel-menu" class="panel-menu" role="menu" hidden>
+              <button type="button" id="open-options-btn" class="panel-menu-item" role="menuitem">API 设置</button>
+              <button type="button" id="clear-btn" class="panel-menu-item" role="menuitem">清空卡片</button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main class="panel-body">
+        <section id="translate-panel" class="panel-screen">
+          <section class="translate-toolbar">
+            <div class="select-wrap">
+              <select id="source-lang"></select>
+            </div>
+            <button type="button" id="swap-btn" class="swap-btn" title="交换语言">↻</button>
+            <div class="select-wrap">
+              <select id="target-lang"></select>
+            </div>
+          </section>
+
+          <section class="translate-panels">
+            <article class="translate-card">
+              <header class="translate-card-head">
+                <span class="translate-pane-label">原文</span>
+                <span class="translate-pane-meta">输入、粘贴，或双击网页文本</span>
+              </header>
+              <div class="translate-card-body">
+                <textarea
+                  id="source-text"
+                  placeholder="在这里输入需要翻译的内容"
+                  spellcheck="false"
+                ></textarea>
+              </div>
+              <footer class="translate-footer">
+                <span id="char-count">0 CHARS</span>
+                <button type="button" id="translate-btn" class="primary-btn">开始翻译</button>
+              </footer>
+            </article>
+
+            <article class="translate-card output-card">
+              <header class="translate-card-head">
+                <span class="translate-pane-label">译文</span>
+                <span class="translate-pane-meta">沉静排版，便于直接阅读</span>
+              </header>
+              <div class="translate-card-body">
+                <div id="target-output" class="output-empty">翻译结果会显示在这里</div>
+              </div>
+              <footer class="translate-footer translate-footer-output">
+                <span class="translate-output-hint">翻译完成后可直接复制</span>
+                <button type="button" id="copy-btn" class="copy-btn" title="复制翻译结果">复制</button>
+              </footer>
+            </article>
+          </section>
+        </section>
+
+        <section id="analysis-panel" class="panel-screen">
+          <article class="analysis-card">
+            <header class="analysis-card-head">
+              <span class="analysis-pane-label">待分析句子</span>
+              <span class="analysis-pane-meta">建议输入完整英文句子</span>
+            </header>
+            <div class="analysis-input-wrap">
+              <textarea
+                id="analysis-text"
+                placeholder="在这里输入或粘贴英文句子"
+                spellcheck="false"
+              ></textarea>
+            </div>
+            <footer class="analysis-footer">
+              <div id="analysis-status" class="analysis-status"></div>
+              <button type="button" id="analysis-btn" class="primary-btn">开始分析</button>
+            </footer>
+          </article>
+
+          <section id="analysis-output" class="analysis-output empty-state">
+            <div class="empty-copy">
+              选中网页中的英文句子，或在上方输入一句英文，这里会展示句法结构、核心时态与逐词解析。
+            </div>
+          </section>
+        </section>
+
+        <section id="word-card-panel" class="panel-screen active">
+          <section id="word-card-output" class="card-state empty-state">
+            <div class="empty-copy">
+              网页中的已保存单词会高亮显示，点击可直接查看卡片；也可双击新单词生成卡片。
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <div class="status-stack" aria-live="polite" aria-atomic="true">
+        <div id="runtime-status" class="runtime-status"></div>
+        <div id="api-status" class="api-status">API Key 未配置</div>
+      </div>
+
+      <section id="settings-overlay" class="settings-overlay" hidden>
+        <button type="button" id="settings-backdrop" class="settings-backdrop" aria-label="关闭设置"></button>
+        <section class="settings-sheet" aria-label="API 设置">
+          <header class="settings-sheet-head">
+            <div>
+              <div class="settings-kicker">PLUGIN SETTINGS</div>
+              <h2>API 设置</h2>
+              <p>直接在插件里调整后端地址、主题和触发方式，不再跳转新页面。</p>
+            </div>
+            <button type="button" id="close-settings-btn" class="ghost-btn settings-close-btn">关闭</button>
+          </header>
+
+          <div class="settings-sheet-body">
+            <label for="settings-backend-base-url" class="settings-label">后端基地址</label>
+            <input
+              id="settings-backend-base-url"
+              class="settings-input"
+              type="text"
+              spellcheck="false"
+              placeholder="https://learn.nanopixel.uk"
+            />
+            <div class="settings-hint">
+              插件会请求 <code>/api/fastapi/translate-advanced</code>、<code>/api/fastapi/quick-lookup</code> 和 <code>/api/fastapi/analyze</code>。
+            </div>
+
+            <label for="settings-theme-mode" class="settings-label">主题模式</label>
+            <div class="select-wrap settings-select-wrap">
+              <select id="settings-theme-mode" class="settings-select">
+                <option value="system">跟随系统</option>
+                <option value="light">浅色</option>
+                <option value="dark">深色</option>
+              </select>
+            </div>
+            <div class="settings-hint">侧边栏和弹出页会同步应用这个主题。</div>
+
+            <section class="settings-toggle-list">
+              <article class="settings-toggle-item">
+                <div class="settings-toggle-copy">
+                  <strong>网页高亮已保存单词</strong>
+                  <span>关闭后网页内不再显示黄色高亮，也不能点击高亮词直接打开单词卡片。</span>
+                </div>
+                <label class="switch">
+                  <input id="settings-show-saved-highlights" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+              </article>
+
+              <article class="settings-toggle-item">
+                <div class="settings-toggle-copy">
+                  <strong>选中后触发当前面板</strong>
+                  <span>开启后，划词会直接送入当前激活的翻译、句法分析或单词卡片面板。</span>
+                </div>
+                <label class="switch">
+                  <input id="settings-show-on-selection" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+              </article>
+
+              <article class="settings-toggle-item">
+                <div class="settings-toggle-copy">
+                  <strong>双击后触发当前面板</strong>
+                  <span>双击英文单词时触发；若已存在释义，优先直接展示已有卡片。</span>
+                </div>
+                <label class="switch">
+                  <input id="settings-show-on-double-click" type="checkbox" />
+                  <span class="slider"></span>
+                </label>
+              </article>
+            </section>
+
+            <div id="settings-status" class="settings-status"></div>
+          </div>
+
+          <footer class="settings-sheet-foot">
+            <button type="button" id="cancel-settings-btn" class="ghost-btn">取消</button>
+            <button type="button" id="save-settings-btn" class="primary-btn">保存设置</button>
+          </footer>
+        </section>
+      </section>
+    </div>
+
+    <script type="module" src="./sidepanel.js"></script>
+  </body>
+</html>

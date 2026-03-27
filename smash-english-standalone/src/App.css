@@ -1,0 +1,11 @@
+/* Default Vite styles removed to support custom full-screen layout */
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+
+.read-the-docs {
+  color: #888;
+}

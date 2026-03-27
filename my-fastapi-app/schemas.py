@@ -1,0 +1,391 @@
+from pydantic import BaseModel, Field
+from typing import List, Optional, Literal, Union
+from datetime import date as pydate
+
+# --- Shared Enums ---
+WritingMode = Literal['fix']
+ContextType = Literal['sentence', 'word', 'writing']
+
+# --- Analysis Schemas ---
+class AnalysisChunk(BaseModel):
+    text: str = Field(description="The text content of this chunk.")
+    grammarDescription: str = Field(description="Grammatical description of this chunk (e.g., 'Prepositional Phrase', 'Noun Phrase'). MUST be in Simplified Chinese.")
+    partOfSpeech: str = Field(description="The part of speech for the head of this chunk (e.g., 'noun', 'verb'). MUST be in Simplified Chinese.")
+    role: str = Field(description="The grammatical role of this chunk in the sentence (e.g., 'Subject', 'Predicate', 'Object'). MUST be in Simplified Chinese.")
+
+class DetailedToken(BaseModel):
+    text: str = Field(description="The specific word or phrase being analyzed.")
+    partOfSpeech: str = Field(description="Part of speech of the token. MUST be in Simplified Chinese.")
+    role: str = Field(description="Grammatical role of the token. MUST be in Simplified Chinese.")
+    explanation: str = Field(description="Detailed explanation of the token's usage, form, or function in this specific context. MUST be in Simplified Chinese.")
+    meaning: str = Field(description="The meaning of the token in this specific context. MUST be in Simplified Chinese.")
+
+class CorrectionChange(BaseModel):
+    type: Literal['add', 'remove', 'keep'] = Field(description="Type of change: 'add' (new text), 'remove' (delete text), or 'keep' (unchanged).")
+    text: str = Field(description="The text content associated with the change.")
+
+class Correction(BaseModel):
+    original: str = Field(description="The original English sentence with errors.")
+    corrected: str = Field(description="The corrected English sentence.")
+    errorType: str = Field(description="General category of the error (e.g., 'Grammar', 'Spelling').")
+    reason: str = Field(description="Explanation of why the correction was made. MUST be in Simplified Chinese.")
+    changes: List[CorrectionChange] = Field(description="List of specific changes (diff) between original and corrected sentences.")
+
+class AnalysisResult(BaseModel):
+    chunks: List[AnalysisChunk] = Field(description="The sentence broken down into rhythmic/sense chunks.")
+    detailedTokens: List[DetailedToken] = Field(description="Detailed analysis of key words and phrases in the sentence.")
+    chineseTranslation: str = Field(description="Natural translation of the full sentence into Simplified Chinese.")
+    englishSentence: str = Field(description="The English sentence being analyzed (corrected version if applicable).")
+    correction: Optional[Correction] = Field(default=None, description="Correction details if the original sentence had errors.")
+    sentencePattern: Optional[str] = Field(default=None, description="The core sentence pattern (e.g., 'S+V+O').")
+    mainTense: Optional[str] = Field(default=None, description="The primary tense of the sentence (e.g., 'Present Simple').")
+
+class AnalysisRequest(BaseModel):
+    sentence: str = Field(description="需要进行语法分析的英语原句")
+
+
+# --- Dictionary Schemas ---
+class DictionaryDefinition(BaseModel):
+    meaning: str = Field(description="Concise meaning in Simplified Chinese.")
+    explanation: str = Field(description="Detailed explanation in Simplified Chinese. MUST NOT be English.")
+    example: str
+    exampleTranslation: str = Field(description="Translation of the example in Simplified Chinese.")
+
+class DictionaryCollocation(BaseModel):
+    phrase: str
+    meaning: str = Field(description="Meaning of the collocation in Simplified Chinese.")
+    example: str
+    exampleTranslation: str = Field(description="Translation of the example in Simplified Chinese.")
+
+class DictionaryEntry(BaseModel):
+    partOfSpeech: str
+    cocaFrequency: Optional[str] = None
+    definitions: List[DictionaryDefinition]
+
+class DictionaryResult(BaseModel):
+    word: str
+    phonetic: str
+    entries: List[DictionaryEntry]
+    collocations: Optional[List[DictionaryCollocation]] = None
+
+class LookupRequest(BaseModel):
+    word: str = Field(description="需要查询详细词典释义的英语单词或短语")
+
+
+# --- Writing Schemas ---
+class WritingSegment(BaseModel):
+    type: Literal['unchanged', 'change']
+    text: str
+    original: Optional[str] = None
+    reason: Optional[str] = None
+    category: Optional[Literal['grammar', 'vocabulary', 'style', 'collocation', 'punctuation']] = None
+
+class WritingResult(BaseModel):
+    mode: WritingMode
+    generalFeedback: str = Field(description="General feedback on the writing.")
+    overall_comment: str = Field(description="A summary of the user's writing quality and main issues in Simplified Chinese.")
+    segments: List[WritingSegment]
+
+class WritingRequest(BaseModel):
+    text: str = Field(description="需要润色或纠错的英语文本")
+    mode: WritingMode = Field(description="写作处理模式，目前仅支持 'fix' (基础纠错)")
+
+
+# --- Chat Schemas ---
+class Message(BaseModel):
+    role: Literal['user', 'assistant'] = Field(description="消息发送者的角色：'user' (用户) 或 'assistant' (AI 助教)")
+    content: str = Field(description="消息的具体文本内容")
+
+class ChatRequest(BaseModel):
+    history: List[Message] = Field(description="之前的对话历史记录列表")
+    contextContent: Optional[str] = Field(None, description="当前的上下文内容（如正在分析的句子或单词）")
+    userMessage: str = Field(description="用户最新发送的消息内容")
+    contextType: ContextType = Field('sentence', description="上下文类型：'sentence' (句子), 'word' (单词), 'writing' (文章)")
+
+class ChatResponse(BaseModel):
+    response: str = Field(description="AI 助教生成的回答内容 (支持 Markdown)")
+
+
+# --- Quick Lookup Schemas (上下文快速查词) ---
+class QuickLookupRequest(BaseModel):
+    word: str = Field(description="The word to look up")
+    context: str = Field(description="The sentence context where the word appears")
+    url: Optional[str] = Field(None, description="The original URL where the word was found")
+    reading_id: Optional[int] = Field(None, description="Associated reading notebook ID")
+    video_id: Optional[int] = Field(None, description="Associated video notebook ID")
+
+class OtherMeaning(BaseModel):
+    meaning: str = Field(description="Other common meaning in Simplified Chinese")
+    partOfSpeech: str = Field(description="POS for this meaning")
+    example: Optional[str] = Field(default="", description="A concise English example sentence for this meaning")
+
+class OtherForm(BaseModel):
+    form: str = Field(description="A common inflected or derived form of the target word")
+    partOfSpeech: str = Field(description="POS for this form, in concise notation like 'v.' 'n.' 'adj.'")
+    meaning: str = Field(description="Concise Simplified Chinese meaning for this form in common usage")
+
+
+class QuickLookupResult(BaseModel):
+    word: str = Field(description="The word being looked up")
+    contextMeaning: str = Field(description="The meaning of the word in the given context, in Simplified Chinese")
+    englishDefinition: Optional[str] = Field(default="", description="A concise English definition for the word in this context. MUST be in natural English.")
+    partOfSpeech: str = Field(description="The part of speech abbreviation (e.g., 'n.', 'v.', 'adj.'), in Simplified Chinese")
+    grammarRole: str = Field(description="The grammatical role of the word in the sentence (e.g., 'Subject', 'Object', 'Fixed collocation'), in Simplified Chinese")
+    explanation: str = Field(description="Explanation of why this meaning applies in the context, in Simplified Chinese")
+    baseForm: Optional[str] = Field(default="", description="The lemma or dictionary/base form of the word")
+    otherForms: Optional[List[OtherForm]] = Field(default=[], description="Deprecated compatibility field. Keep empty and use baseForm only.")
+    otherMeanings: Optional[List[OtherMeaning]] = Field(default=[], description="Other common and high-frequency meanings of the word")
+
+
+
+# --- Rapid Lookup (Ultra Fast) ---
+class RapidLookupRequest(BaseModel):
+    word: str
+    context: str
+
+class RapidLookupResult(BaseModel):
+    m: str = Field(description="Concise Chinese meaning")
+    p: str = Field(description="POS abbreviation")
+
+# --- Translate Schemas ---
+class TranslateRequest(BaseModel):
+    text: str = Field(description="需要极速翻译的源文本内容")
+
+class AdvancedTranslateRequest(BaseModel):
+    text: str = Field(description="需要翻译的源文本内容")
+    source_lang: str = Field("zh", description="源语言代码，例如 'zh' (中文), 'en' (英文)")
+    target_lang: str = Field("en", description="目标语言代码")
+
+class TranslateResult(BaseModel):
+    translation: str = Field(description="翻译后的文本结果")
+
+
+# --- LLM Config Schemas ---
+ThinkingLevel = Literal['default', 'minimal', 'low', 'medium', 'high']
+LlmFeatureKey = Literal[
+    'analysis',
+    'dictionary',
+    'writing',
+    'chat',
+    'quick_lookup',
+    'rapid_lookup',
+    'translate',
+    'translate_advanced',
+    'daily_summary',
+    'review_article'
+]
+
+
+class FeatureLLMConfig(BaseModel):
+    feature: LlmFeatureKey
+    label: str
+    description: str
+    model: str
+    thinking_level: ThinkingLevel
+
+
+class FeatureLLMConfigResponse(BaseModel):
+    features: List[FeatureLLMConfig]
+
+
+# --- Saved Words Schemas ---
+class SavedWordEncounter(BaseModel):
+    key: str
+    context: str
+    url: Optional[str] = None
+    note_id: Optional[int] = None
+    reading_id: Optional[int] = None
+    video_id: Optional[int] = None
+    created_at: Optional[str] = None
+    lookup: QuickLookupResult
+
+
+class SavedWord(BaseModel):
+    id: int
+    word: str
+    context: str
+    url: Optional[str] = None
+    data: dict
+    encounters: List[SavedWordEncounter] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    note_id: Optional[int] = None
+    reading_id: Optional[int] = None
+    video_id: Optional[int] = None
+    # FSRS fields
+    stability: float = 0.0
+    difficulty: float = 0.0
+    elapsed_days: int = 0
+    scheduled_days: int = 0
+    last_review: Optional[str] = None
+    reps: int = 0
+    state: int = 0
+
+class SavedWordsResponse(BaseModel):
+    words: List[SavedWord]
+
+
+class SavedWordImportItem(BaseModel):
+    id: Optional[int] = None
+    word: str
+    context: Optional[str] = None
+    url: Optional[str] = None
+    data: Optional[dict] = None
+    encounters: List[SavedWordEncounter] = Field(default_factory=list)
+    created_at: Optional[str] = None
+    note_id: Optional[int] = None
+    reading_id: Optional[int] = None
+    video_id: Optional[int] = None
+    stability: float = 0.0
+    difficulty: float = 0.0
+    elapsed_days: int = 0
+    scheduled_days: int = 0
+    last_review: Optional[str] = None
+    reps: int = 0
+    state: int = 0
+
+
+class SavedWordsExportResponse(BaseModel):
+    version: int = 1
+    exported_at: str
+    words: List[SavedWord]
+
+
+class SavedWordsImportRequest(BaseModel):
+    version: Optional[int] = None
+    exported_at: Optional[str] = None
+    words: List[SavedWordImportItem]
+
+
+class SavedWordsImportResponse(BaseModel):
+    total: int
+    imported: int
+    merged: int
+    skipped: int
+
+class SavedWordUpdate(BaseModel):
+    word: Optional[str] = None
+    context: Optional[str] = None
+    url: Optional[str] = None
+    data: Optional[dict] = None
+    note_id: Optional[int] = None
+
+class SavedWordCreate(BaseModel):
+    word: str
+    context: str
+    url: Optional[str] = None
+    data: Optional[dict] = None
+    note_id: Optional[int] = None
+
+class BatchDeleteRequest(BaseModel):
+    word_ids: List[int]
+
+class DailyNote(BaseModel):
+    id: int
+    title: Optional[str] = None
+    day: str  # YYYY-MM-DD
+    summary: Optional[str] = None
+    content: Optional[str] = None
+    word_count: int
+    created_at: str
+
+class DailyNotesResponse(BaseModel):
+    notes: List[DailyNote]
+
+class NoteDetailResponse(BaseModel):
+    note: DailyNote
+    words: List[SavedWord]
+
+class BlogSummaryResult(BaseModel):
+    title: str = Field(description="A catchy, emoji-infused title for the blog post.")
+    prologue: str = Field(description="A concise, engaging prologue (80-120 words) introducing the day's learning.")
+    content: str = Field(description="The main blog content in Markdown format, connecting the words in a story-like narrative.")
+
+
+# --- Video Notebook Schemas ---
+class VideoNotebookCreate(BaseModel):
+    title: str
+    video_url: str
+    video_id: Optional[str] = None
+    srt_content: str
+    thumbnail_url: Optional[str] = None
+
+class VideoNotebook(BaseModel):
+    id: int
+    title: str
+    video_url: str
+    video_id: Optional[str] = None
+    srt_content: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+class VideoNotebookListResponse(BaseModel):
+    notebooks: List[VideoNotebook]
+
+class VideoNotebookUpdate(BaseModel):
+    title: Optional[str] = None
+    video_url: Optional[str] = None
+    video_id: Optional[str] = None
+    srt_content: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+
+# --- FSRS Review Schemas ---
+class ReviewArticle(BaseModel):
+    id: Optional[int] = None
+    review_date: Optional[str] = None
+    title: str
+    content: str
+    article_type: str
+    words_json: List[int]
+    is_completed: bool = False
+    created_at: Optional[str] = None
+
+class TodayReviewResponse(BaseModel):
+    article: Optional[ReviewArticle] = None
+    words: List[SavedWord]
+    is_new_article: bool
+
+class ReviewPromptResponse(BaseModel):
+    prompt: str
+    words: List[SavedWord]
+
+class ReviewImportRequest(BaseModel):
+    title: str
+    content: str
+    article_type: str
+    words_ids: Optional[List[int]] = None
+
+class FSRSFeedbackRequest(BaseModel):
+    word_id: int
+    rating: int  # 1: Again/Forgot, 2: Hard/Good, 3: Easy/Mastered
+
+# --- Reading Notebook Schemas ---
+class ReadingNotebookCreate(BaseModel):
+    title: str
+    content: str
+    source_url: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    description: Optional[str] = None
+    word_count: Optional[int] = 0
+
+class ReadingNotebook(BaseModel):
+    id: int
+    title: str
+    content: Optional[str] = None
+    source_url: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    description: Optional[str] = None
+    word_count: int
+    created_at: str
+    updated_at: str
+
+class ReadingNotebookListResponse(BaseModel):
+    notebooks: List[ReadingNotebook]
+
+class ReadingNotebookUpdate(BaseModel):
+    title: Optional[str] = None
+    content: Optional[str] = None
+    source_url: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    description: Optional[str] = None
+    word_count: Optional[int] = None

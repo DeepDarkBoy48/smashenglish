@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmashEnglish Side Panel Settings</title>
+    <link rel="stylesheet" href="./options.css" />
+  </head>
+  <body>
+    <main class="settings-wrap">
+      <section class="settings-card">
+        <h1>SmashEnglish Side Panel</h1>
+        <p class="subtitle">插件现在统一走你的后端服务，浏览器里不再单独配置 Gemini API Key。</p>
+
+        <label for="backend-base-url">后端基地址</label>
+        <input id="backend-base-url" type="text" spellcheck="false" placeholder="https://learn.nanopixel.uk" />
+        <div class="hint">插件会请求 <code>/api/fastapi/translate-advanced</code> 和 <code>/api/fastapi/quick-lookup</code>。</div>
+
+        <label for="theme-mode">主题模式</label>
+        <select id="theme-mode">
+          <option value="system">跟随系统</option>
+          <option value="light">浅色</option>
+          <option value="dark">深色</option>
+        </select>
+        <div class="hint">侧边栏和设置页会同时应用这个主题。</div>
+
+        <section class="trigger-section">
+          <div class="trigger-row">
+            <div class="trigger-copy">
+              <span>网页高亮已保存单词</span>
+              <small>关闭后网页内不再显示黄色高亮，也不可点击高亮词直接开卡片。</small>
+            </div>
+            <label class="switch">
+              <input id="show-saved-highlights" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="trigger-row">
+            <div class="trigger-copy">
+              <span>选中后触发当前面板</span>
+              <small>适合划词翻译；开启后，选中文本会直接送入当前面板。</small>
+            </div>
+            <label class="switch">
+              <input id="show-on-selection" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="trigger-row">
+            <div class="trigger-copy">
+              <span>双击后触发当前面板</span>
+              <small>双击英文单词时触发；未命中已有释义才会调用 AI 生成。</small>
+            </div>
+            <label class="switch">
+              <input id="show-on-double-click" type="checkbox" />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </section>
+
+        <div class="hint">
+          侧边栏默认打开单词卡片页。若高亮和已有释义命中成功，会直接展示已有卡片，不重复请求 AI。
+        </div>
+
+        <div class="buttons">
+          <button id="save-btn" class="primary">保存</button>
+        </div>
+        <div id="status-text" class="status-text"></div>
+      </section>
+    </main>
+
+    <script type="module" src="./options.js"></script>
+  </body>
+</html>

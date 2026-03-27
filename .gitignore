@@ -1,0 +1,34 @@
+.DS_Store
+
+# Local agent/config workspace files
+.agents/
+
+# Editor settings
+.idea/
+.vscode/
+
+# Local docs with sensitive notes
+README.md
+
+# Python backend local files
+__pycache__/
+*.pyc
+.pytest_cache/
+my-fastapi-app/.env
+my-fastapi-app/.venv/
+
+# Node frontend local files
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+*.local
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.tsbuildinfo

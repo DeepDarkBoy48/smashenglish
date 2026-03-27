@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmashEnglish Menu</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <main class="popup-shell">
+      <header class="popup-head">
+        <img src="./assets/extension-icon.png" alt="SmashEnglish logo" class="popup-logo" />
+        <div>
+          <div class="popup-kicker">SmashEnglish</div>
+          <h1>插件菜单</h1>
+        </div>
+      </header>
+
+      <section class="popup-actions">
+        <button type="button" id="open-sidepanel-btn" class="menu-btn primary">
+          <span class="menu-title">打开侧边栏</span>
+          <span class="menu-copy">进入翻译、句法分析和单词卡片面板</span>
+        </button>
+        <button type="button" id="open-options-btn" class="menu-btn">
+          <span class="menu-title">API 设置</span>
+          <span class="menu-copy">配置后端地址、主题和交互开关</span>
+        </button>
+      </section>
+
+      <div id="popup-status" class="popup-status"></div>
+    </main>
+
+    <script type="module" src="./popup.js"></script>
+  </body>
+</html>

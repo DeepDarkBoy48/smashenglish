@@ -1,0 +1,221 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap");
+@import "tailwindcss";
+
+/* Enable class-based dark mode (compatible with global theme system) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom Scrollbar for Dark Mode */
+.dark {
+  color-scheme: dark;
+}
+
+.dark ::-webkit-scrollbar,
+.dark::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.dark ::-webkit-scrollbar-track,
+.dark::-webkit-scrollbar-track {
+  background: #0d1117;
+}
+
+.dark ::-webkit-scrollbar-thumb,
+.dark::-webkit-scrollbar-thumb {
+  background: #30363d;
+  border-radius: 5px;
+  border: 2px solid #0d1117;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover,
+.dark::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* Firefox Scrollbar Support */
+@supports (scrollbar-color: auto) {
+  .dark {
+    scrollbar-color: #30363d #0d1117;
+    scrollbar-width: thin;
+  }
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  /* background-color: #f8fafc;  Avoid overriding global body bg if possible, or scope it */
+}
+
+.font-serif {
+  font-family: "Playfair Display", serif;
+}
+
+/* Markdown Styles */
+.markdown-body {
+  line-height: 1.8;
+}
+
+.markdown-body p {
+  margin-bottom: 1.25rem;
+}
+
+.markdown-body h1, .markdown-body h2, .markdown-body h3 {
+  font-family: "Playfair Display", serif;
+  font-weight: 700;
+  color: #111827;
+  /* gray-900 */
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.dark .markdown-body h1, .dark .markdown-body h2, .dark .markdown-body h3 {
+  color: #f9fafb;
+  /* gray-50 */
+}
+
+.markdown-body h1 { font-size: 2.25rem; }
+.markdown-body h2 { font-size: 1.875rem; border-bottom: 1px solid #f3f4f6; padding-bottom: 0.5rem; }
+.dark .markdown-body h2 { border-color: #374151; }
+.markdown-body h3 { font-size: 1.5rem; }
+
+.markdown-body strong {
+  font-weight: 700;
+  color: #db2777;
+}
+
+.dark .markdown-body strong {
+  color: #f472b6;
+}
+
+.markdown-body ul, .markdown-body ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.markdown-body ul { list-style-type: disc; }
+.markdown-body ol { list-style-type: decimal; }
+
+.markdown-body li {
+  margin-bottom: 0.5rem;
+}
+
+.markdown-body blockquote {
+  border-left: 4px solid #f472b6;
+  padding-left: 1.25rem;
+  font-style: italic;
+  color: #4b5563;
+  margin: 1.5rem 0;
+}
+
+.dark .markdown-body blockquote {
+  color: #9ca3af;
+}
+
+.markdown-body code {
+  background-color: #f3f4f6;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-family: monospace;
+}
+
+.dark .markdown-body code {
+  background-color: #1f2937;
+}
+
+/* Animation utilities */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+@keyframes pulse-highlight {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.4); }
+  50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(234, 179, 8, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+}
+
+.animate-pulse-highlight {
+  display: inline-block;
+  animation: pulse-highlight 1.5s ease-in-out 2;
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: trangrayX(1rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: trangrayX(0);
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.4s ease-out;
+}
+
+@keyframes bounce-slow {
+
+  0%,
+  100% {
+    transform: trangrayY(0);
+  }
+
+  50% {
+    transform: trangrayY(-4px);
+  }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 1.5s ease-in-out infinite;
+}
+
+/* YouTube Player Safari/iOS Fixes */
+#youtube-player {
+  display: block;
+}
+
+iframe#youtube-player {
+  border: none;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Ensure iframes don't overflow on small screens or Safari */
+iframe {
+  max-width: 100%;
+}
+
+/* Aspect ratio containment for modern browsers */
+.aspect-video-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: black;
+  overflow: hidden;
+}
+
+.aspect-video-container #youtube-player {
+  max-width: 100%;
+  max-height: 100%;
+  aspect-ratio: 16 / 9;
+}
