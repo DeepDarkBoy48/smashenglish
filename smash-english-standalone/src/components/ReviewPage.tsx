@@ -1,16 +1,17 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { 
   getTodayReviewService, 
   submitReviewFeedbackService,
   getReviewPromptService,
-  importReviewArticleService
+  importReviewArticleService,
+  getReviewReadAloudAudioService
 } from '../services/geminiService';
 import type { TodayReviewResponse, SavedWord } from '../types';
 import {
   Loader2, ArrowLeft, BrainCircuit, Sparkles,
   CheckCircle2, Trophy, X,
   MessageSquare, Headphones, BookType, LayoutGrid, RotateCcw,
-  Mic2, BookText, Copy, ClipboardCheck, FilePlus
+  Mic2, BookText, Copy, ClipboardCheck, FilePlus, Volume2, Square
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { getSavedWordLatestEncounter } from '../utils/savedWords';
@@ -33,6 +34,11 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
   const [flippedIds, setFlippedIds] = useState<Set<number>>(new Set());
   const [activeModalWordId, setActiveModalWordId] = useState<number | null>(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [loadingReadAloudWordId, setLoadingReadAloudWordId] = useState<number | null>(null);
+  const [speakingWordId, setSpeakingWordId] = useState<number | null>(null);
+  const readAloudCacheRef = useRef<Map<string, string>>(new Map());
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const readAloudRequestIdRef = useRef(0);
 
   useEffect(() => {
     fetchTodayReview();
@@ -144,6 +150,108 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
       setCurrentCardIndex(Math.max(remainingWords.length - 1, 0));
     }
   }, [currentCardIndex, remainingWords.length]);
+
+  const stopReadAloud = () => {
+    readAloudRequestIdRef.current += 1;
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current.currentTime = 0;
+      activeAudioRef.current = null;
+    }
+    setSpeakingWordId(null);
+    setLoadingReadAloudWordId(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      stopReadAloud();
+      for (const url of readAloudCacheRef.current.values()) {
+        URL.revokeObjectURL(url);
+      }
+      readAloudCacheRef.current.clear();
+    };
+  }, []);
+
+  const getReadAloudText = (word: SavedWord, lookup: QuickLookupResult | null) => {
+    return String(lookup?.baseForm || word.word || '').trim();
+  };
+
+  const handlePlayReadAloud = async (word: SavedWord, lookup: QuickLookupResult | null) => {
+    const text = getReadAloudText(word, lookup);
+    if (!text) {
+      alert('当前单词缺少可朗读内容');
+      return;
+    }
+
+    if (speakingWordId === word.id) {
+      stopReadAloud();
+      return;
+    }
+
+    stopReadAloud();
+    const requestId = readAloudRequestIdRef.current;
+    setLoadingReadAloudWordId(word.id);
+
+    try {
+      let audioUrl = readAloudCacheRef.current.get(text);
+      if (!audioUrl) {
+        const audioBlob = await getReviewReadAloudAudioService(text);
+        if (requestId !== readAloudRequestIdRef.current) return;
+        audioUrl = URL.createObjectURL(audioBlob);
+        readAloudCacheRef.current.set(text, audioUrl);
+      }
+
+      if (requestId !== readAloudRequestIdRef.current) return;
+
+      const audio = new Audio(audioUrl);
+      activeAudioRef.current = audio;
+      audio.onended = () => {
+        if (activeAudioRef.current === audio) {
+          activeAudioRef.current = null;
+          setSpeakingWordId(null);
+        }
+      };
+      audio.onerror = () => {
+        if (activeAudioRef.current === audio) {
+          activeAudioRef.current = null;
+          setSpeakingWordId(null);
+        }
+      };
+
+      setSpeakingWordId(word.id);
+      await audio.play();
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || '朗读失败，请稍后重试');
+    } finally {
+      setLoadingReadAloudWordId((current) => (current === word.id ? null : current));
+    }
+  };
+
+  const renderReadAloudButton = (word: SavedWord, lookup: QuickLookupResult | null, className: string) => {
+    const isLoading = loadingReadAloudWordId === word.id;
+    const isSpeaking = speakingWordId === word.id;
+    return (
+      <button
+        type="button"
+        onClick={(event) => {
+          event.stopPropagation();
+          handlePlayReadAloud(word, lookup);
+        }}
+        disabled={isLoading}
+        className={className}
+      >
+        {isLoading ? (
+          <Loader2 className="w-4 h-4 animate-spin" />
+        ) : isSpeaking ? (
+          <Square className="w-4 h-4" />
+        ) : (
+          <Volume2 className="w-4 h-4" />
+        )}
+        <span>{isLoading ? '生成中...' : isSpeaking ? '停止朗读' : '朗读'}</span>
+      </button>
+    );
+  };
 
 
 
@@ -339,6 +447,7 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
                const latestEncounter = getSavedWordLatestEncounter(item);
                const activeLookup: QuickLookupResult | null = latestEncounter?.lookup ?? null;
                const activeContext = latestEncounter?.context || '';
+               const readAloudText = getReadAloudText(item, activeLookup);
                return (
                  <div className="px-2">
                    <div className="mx-auto max-w-3xl space-y-3">
@@ -366,7 +475,21 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
                              </div>
                            </div>
                            <div className="pt-8 border-t border-gray-50 dark:border-gray-800">
-                             <h3 className="text-4xl md:text-5xl font-bold mb-2 text-gray-900 dark:text-white">{item.word}</h3>
+                             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+                               <div>
+                                 <h3 className="text-4xl md:text-5xl font-bold mb-2 text-gray-900 dark:text-white">{item.word}</h3>
+                                 {readAloudText && readAloudText.toLowerCase() !== item.word.toLowerCase() && (
+                                   <div className="text-sm text-gray-500 dark:text-gray-400">
+                                     按原型朗读 <span className="font-semibold text-gray-700 dark:text-gray-200">{readAloudText}</span>
+                                   </div>
+                                 )}
+                               </div>
+                               {renderReadAloudButton(
+                                 item,
+                                 activeLookup,
+                                 'inline-flex items-center justify-center gap-2 rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-600 transition hover:bg-blue-100 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50'
+                               )}
+                             </div>
                              <div className="mt-8 flex justify-center">
                                <div className="flex items-center gap-2 px-8 py-4 bg-pink-500 text-white rounded-2xl text-lg font-bold shadow-lg shadow-pink-500/20 group-hover:scale-105 transition-transform">
                                  <Sparkles className="w-5 h-5" /> 点击卡片查看释义
@@ -377,11 +500,18 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
 
                          <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-white dark:bg-gray-950 border-2 border-pink-100 dark:border-pink-900/30 rounded-[2.8rem] p-6 md:p-8 flex flex-col shadow-2xl overflow-hidden">
                            <div className="flex-1 overflow-y-auto pr-2 space-y-5 custom-scrollbar">
-                             <div className="flex items-center justify-between">
+                           <div className="flex items-center justify-between">
                                <h3 className="text-3xl font-bold">{item.word}</h3>
-                               <button onClick={(e) => { e.stopPropagation(); setFlippedIds(prev => { const next = new Set(prev); next.delete(item.id); return next; }); }} className="text-gray-300 hover:text-gray-500">
-                                 <RotateCcw className="w-4 h-4" />
-                               </button>
+                               <div className="flex items-center gap-2">
+                                 {renderReadAloudButton(
+                                   item,
+                                   activeLookup,
+                                   'inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50'
+                                 )}
+                                 <button onClick={(e) => { e.stopPropagation(); setFlippedIds(prev => { const next = new Set(prev); next.delete(item.id); return next; }); }} className="text-gray-300 hover:text-gray-500">
+                                   <RotateCcw className="w-4 h-4" />
+                                 </button>
+                               </div>
                              </div>
                              <div className="flex items-center gap-2 flex-wrap">
                                <span className="text-sm font-bold text-pink-600 dark:text-pink-400 bg-pink-50 dark:bg-pink-900/30 px-2.5 py-1 rounded-full border border-pink-100 dark:border-pink-800/20 uppercase">{activeLookup?.partOfSpeech}</span>
@@ -493,7 +623,14 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
                         </div>
                         <div className="space-y-1">
                           <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400">原型</div>
-                          <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{displayWord}</h3>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{displayWord}</h3>
+                            {renderReadAloudButton(
+                              item,
+                              activeLookup,
+                              'inline-flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-3 py-2 text-xs font-bold text-blue-600 transition hover:bg-blue-100 dark:border-blue-900/30 dark:bg-blue-950/30 dark:text-blue-300 dark:hover:bg-blue-950/50'
+                            )}
+                          </div>
                           {currentForm && (
                             <div className="text-xs text-gray-500 dark:text-gray-400">
                               当前词形 <span className="font-semibold text-gray-700 dark:text-gray-200">{currentForm}</span>

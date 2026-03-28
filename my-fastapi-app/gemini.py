@@ -4,6 +4,9 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 import os
 import json
+import io
+import wave
+import base64
 from dotenv import load_dotenv
 from schemas import (
     AnalysisResult, AnalysisRequest,
@@ -45,67 +48,86 @@ def get_client(user_api_key: Optional[str] = None):
 
 DEFAULT_MODEL = 'gemini-3-flash-preview'
 LITE_MODEL = 'gemini-3.1-flash-lite-preview'
+LIVE_MODEL = 'gemini-3.1-flash-live-preview'
 THINKING_LEVELS = {'default', 'minimal', 'low', 'medium', 'high'}
+STANDARD_MODEL_OPTIONS = [DEFAULT_MODEL, LITE_MODEL]
 FEATURE_CONFIGS = {
     'analysis': {
         'label': '句法分析',
         'description': '入口：顶部导航「句法」页。用于句子结构拆解、语法纠错与逐词讲解。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'low',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'dictionary': {
         'label': '详细词典',
         'description': '入口：顶部导航「词典」页。用于完整词义、搭配、例句与频率分析。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'writing': {
         'label': '写作批改',
         'description': '入口：顶部导航「写作」页。用于写作润色、纠错与反馈。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'low',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'chat': {
         'label': 'AI 助教',
         'description': '入口：各学习页面里的 AI 助教聊天面板。用于带上下文的聊天问答。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'quick_lookup': {
         'label': '上下文查词',
         'description': '入口：精读页、视频跟读页中的查词卡片。结合句子给出释义、词性和用法。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'rapid_lookup': {
         'label': '极速查词',
         'description': '入口：精读页、视频跟读页中的极速释义场景。极简释义，优先速度。',
         'model': LITE_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'translate': {
         'label': '极速翻译',
         'description': '入口：精读页、视频跟读页中的句子翻译按钮。用于单句或整段快速翻译。',
         'model': LITE_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'translate_advanced': {
         'label': '高级翻译',
         'description': '入口：顶部导航「翻译」页。用于多语言翻译、源语言/目标语言选择与自动识别。',
         'model': LITE_MODEL,
         'thinking_level': 'minimal',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'daily_summary': {
         'label': '每日总结',
         'description': '入口：日记/每日总结生成流程，当前不是顶部单独页面。根据当天学习内容生成总结卡片。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'low',
+        'available_models': STANDARD_MODEL_OPTIONS,
     },
     'review_article': {
         'label': '复习文章',
         'description': '入口：复习页文章生成流程。根据复习词汇生成文章内容。',
         'model': DEFAULT_MODEL,
         'thinking_level': 'low',
+        'available_models': STANDARD_MODEL_OPTIONS,
+    },
+    'review_read_aloud': {
+        'label': '复习朗读',
+        'description': '入口：复习页单词卡片与详情弹窗的朗读按钮。用于生成英语单词或短语的发音音频。',
+        'model': LIVE_MODEL,
+        'thinking_level': 'minimal',
+        'available_models': [LIVE_MODEL],
     },
 }
 
@@ -135,6 +157,29 @@ def resolve_feature_config(feature: str, overrides: Optional[dict] = None) -> tu
             thinking_level = custom_thinking_level
 
     return model, thinking_level
+
+
+def _pcm_to_wav_bytes(audio_bytes: bytes, sample_rate: int = 24000) -> bytes:
+    buffer = io.BytesIO()
+    with wave.open(buffer, 'wb') as wav_file:
+        wav_file.setnchannels(1)
+        wav_file.setsampwidth(2)
+        wav_file.setframerate(sample_rate)
+        wav_file.writeframes(audio_bytes)
+    return buffer.getvalue()
+
+
+def _normalize_live_audio_chunk(raw_chunk) -> bytes:
+    if isinstance(raw_chunk, bytes):
+        return raw_chunk
+    if isinstance(raw_chunk, bytearray):
+        return bytes(raw_chunk)
+    if isinstance(raw_chunk, str):
+        try:
+            return base64.b64decode(raw_chunk)
+        except Exception:
+            return raw_chunk.encode('utf-8')
+    return b''
 
 
 
@@ -840,3 +885,67 @@ async def generate_review_article_service(words: List[dict], user_api_key: Optio
             article_type="none",
             words_json=[]
         )
+
+
+async def synthesize_review_read_aloud_service(
+    text: str,
+    user_api_key: Optional[str] = None,
+    config_overrides: Optional[dict] = None
+) -> bytes:
+    normalized_text = " ".join((text or "").strip().split())
+    if not normalized_text:
+        raise ValueError("朗读内容不能为空。")
+    if len(normalized_text) > 120:
+        raise ValueError("朗读内容过长，请控制在 120 个字符以内。")
+
+    model, thinking_level = resolve_feature_config('review_read_aloud', config_overrides)
+    client = get_client(user_api_key)
+
+    config = types.LiveConnectConfig(
+        response_modalities=[types.Modality.AUDIO],
+        system_instruction=types.Content(
+            parts=[
+                types.Part(
+                    text=(
+                        "You are a pronunciation coach for English learners. "
+                        "Read the provided English word or short phrase once in a clear, natural American English voice. "
+                        "Do not add explanations, translations, or extra words."
+                    )
+                )
+            ]
+        ),
+        thinking_config=types.ThinkingConfig(thinking_level=thinking_level),
+    )
+
+    audio_chunks: List[bytes] = []
+
+    try:
+        async with client.aio.live.connect(model=model, config=config) as session:
+            await session.send_realtime_input(
+                text=f"Read this exactly once with audio only: {normalized_text}"
+            )
+
+            async for response in session.receive():
+                content = getattr(response, 'server_content', None)
+                if not content:
+                    continue
+
+                model_turn = getattr(content, 'model_turn', None)
+                if model_turn and getattr(model_turn, 'parts', None):
+                    for part in model_turn.parts:
+                        inline_data = getattr(part, 'inline_data', None)
+                        if inline_data and getattr(inline_data, 'data', None):
+                            chunk = _normalize_live_audio_chunk(inline_data.data)
+                            if chunk:
+                                audio_chunks.append(chunk)
+
+                if getattr(content, 'turn_complete', False) or getattr(content, 'generation_complete', False):
+                    break
+    except Exception as e:
+        print(f"Gemini Live Read Aloud Error: {e}")
+        raise Exception("朗读音频生成失败，请检查网络或 API Key 设置。")
+
+    if not audio_chunks:
+        raise Exception("模型没有返回可播放的音频。")
+
+    return _pcm_to_wav_bytes(b"".join(audio_chunks))

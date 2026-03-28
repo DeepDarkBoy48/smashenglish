@@ -201,3 +201,11 @@ export const importReviewArticleService = (data: { title: string; content: strin
 export const submitReviewFeedbackService = (data: FSRSFeedbackRequest): Promise<any> => {
   return request.post('/fastapi/review/feedback', data);
 };
+
+export const getReviewReadAloudAudioService = (text: string): Promise<Blob> => {
+  return request.post(
+    '/fastapi/review/read-aloud',
+    { text },
+    { responseType: 'blob', timeout: 60000 }
+  ) as Promise<Blob>;
+};

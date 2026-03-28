@@ -2,6 +2,16 @@
 
 # Local agent/config workspace files
 .agents/
+!.agents/
+.agents/*
+!.agents/skills/
+.agents/skills/*
+!.agents/skills/git-commit-deploy/
+!.agents/skills/git-commit-deploy/SKILL.md
+!.agents/skills/git-diff-feature-log/
+!.agents/skills/git-diff-feature-log/SKILL.md
+!.agents/skills/git-diff-feature-log/scripts/
+!.agents/skills/git-diff-feature-log/scripts/prepare_feature_log_entry.sh
 
 # Editor settings
 .idea/

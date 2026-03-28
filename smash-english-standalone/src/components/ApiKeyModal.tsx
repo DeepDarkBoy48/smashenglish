@@ -20,7 +20,8 @@ interface ApiKeyModalProps {
 
 const MODEL_LABELS: Record<(typeof MODEL_OPTIONS)[number], string> = {
   'gemini-3-flash-preview': 'Gemini 3 Flash',
-  'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash Lite'
+  'gemini-3.1-flash-lite-preview': 'Gemini 3.1 Flash Lite',
+  'gemini-3.1-flash-live-preview': 'Gemini 3.1 Flash Live'
 };
 
 export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => {
@@ -217,6 +218,7 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                       const selectedModel = override.model || featureConfig.model;
                       const selectedThinkingLevel = override.thinking_level || featureConfig.thinking_level;
                       const hasOverride = Boolean(override.model || override.thinking_level);
+                      const selectableModels = featureConfig.available_models?.length ? featureConfig.available_models : MODEL_OPTIONS;
 
                       return (
                         <div
@@ -272,9 +274,9 @@ export const ApiKeyModal: React.FC<ApiKeyModalProps> = ({ isOpen, onClose }) => 
                                 onChange={(e) => handleOverrideChange(featureConfig.feature, 'model', e.target.value)}
                                 className="w-full rounded-2xl border border-black/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-black focus:ring-2 focus:ring-black/5 dark:border-white/10 dark:bg-white/5 dark:text-white dark:focus:border-white/30 dark:focus:ring-white/10"
                               >
-                                {MODEL_OPTIONS.map((model) => (
+                                {selectableModels.map((model) => (
                                   <option key={model} value={model}>
-                                    {MODEL_LABELS[model]} ({model})
+                                    {MODEL_LABELS[model as keyof typeof MODEL_LABELS] || model} ({model})
                                   </option>
                                 ))}
                               </select>

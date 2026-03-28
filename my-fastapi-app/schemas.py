@@ -172,7 +172,8 @@ LlmFeatureKey = Literal[
     'translate',
     'translate_advanced',
     'daily_summary',
-    'review_article'
+    'review_article',
+    'review_read_aloud'
 ]
 
 
@@ -182,10 +183,15 @@ class FeatureLLMConfig(BaseModel):
     description: str
     model: str
     thinking_level: ThinkingLevel
+    available_models: List[str] = Field(default_factory=list)
 
 
 class FeatureLLMConfigResponse(BaseModel):
     features: List[FeatureLLMConfig]
+
+
+class ReviewReadAloudRequest(BaseModel):
+    text: str = Field(description="需要朗读的英文单词或短语")
 
 
 # --- Saved Words Schemas ---

@@ -103,7 +103,8 @@ export type LlmFeatureKey =
   | 'translate'
   | 'translate_advanced'
   | 'daily_summary'
-  | 'review_article';
+  | 'review_article'
+  | 'review_read_aloud';
 
 export interface FeatureLLMConfig {
   feature: LlmFeatureKey;
@@ -111,6 +112,7 @@ export interface FeatureLLMConfig {
   description: string;
   model: string;
   thinking_level: ThinkingLevel;
+  available_models: string[];
 }
 
 export interface FeatureLLMConfigResponse {

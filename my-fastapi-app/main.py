@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Header, Depends
+from fastapi import FastAPI, HTTPException, Header, Depends, Response
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, Optional, List
 import os
@@ -27,7 +27,7 @@ from schemas import (
     TodayReviewResponse, ReviewArticle, FSRSFeedbackRequest,
     ReviewPromptResponse, ReviewImportRequest,
     SavedWordUpdate, SavedWordCreate, BatchDeleteRequest,
-    FeatureLLMConfigResponse
+    FeatureLLMConfigResponse, ReviewReadAloudRequest
 )
 
 
@@ -637,6 +637,29 @@ async def translate_advanced_endpoint(
     try:
         result = await gemini.translate_advanced_service(request, user_api_key, llm_config_overrides)
         return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/fastapi/review/read-aloud")
+async def review_read_aloud(
+    request: ReviewReadAloudRequest,
+    user_api_key: Optional[str] = Depends(get_user_api_key),
+    llm_config_overrides: dict = Depends(get_llm_config_overrides)
+):
+    try:
+        audio_bytes = await gemini.synthesize_review_read_aloud_service(
+            request.text,
+            user_api_key,
+            llm_config_overrides
+        )
+        return Response(
+            content=audio_bytes,
+            media_type="audio/wav",
+            headers={"Content-Disposition": 'inline; filename="review-read-aloud.wav"'}
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

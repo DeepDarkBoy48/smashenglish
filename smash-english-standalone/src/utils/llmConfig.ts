@@ -6,7 +6,8 @@ export const LLM_OVERRIDES_STORAGE_KEY = 'smash_gemini_llm_overrides';
 export const THINKING_LEVEL_OPTIONS: ThinkingLevel[] = ['default', 'minimal', 'low', 'medium', 'high'];
 export const MODEL_OPTIONS = [
   'gemini-3-flash-preview',
-  'gemini-3.1-flash-lite-preview'
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3.1-flash-live-preview'
 ] as const;
 
 const VALID_MODELS = new Set<string>(MODEL_OPTIONS);
