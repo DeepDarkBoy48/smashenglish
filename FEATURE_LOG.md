@@ -2,9 +2,26 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
-## 2026-03-28 17:24:54 +0800
+## 2026-03-29 11:17:54 +0800
 
 - Commit: pending
+- Summary: 让浏览器侧边栏单词卡片接入后端朗读音频，并收紧词汇详情卡片顶部排版。
+
+### Features
+
+- 浏览器插件的单词卡片朗读从浏览器内建语音切换为请求后端 `/api/fastapi/review/read-aloud`，支持生成中状态、播放/停止控制，以及按单词缓存音频避免重复请求。
+- 当插件切换后端地址或清空卡片时，会同步清理朗读缓存与播放状态，减少旧音频串用和并发点击带来的状态错乱。
+- 收紧单词卡片头部区域的边距、标题字号、高亮胶囊和朗读按钮尺寸，让“原型 + 当前词形 + 朗读按钮”这一块更紧凑。
+
+### Files
+
+- `FEATURE_LOG.md`
+- `chrome-sidepanel-translator/sidepanel.js`
+- `chrome-sidepanel-translator/sidepanel.css`
+
+## 2026-03-28 17:24:54 +0800
+
+- Commit: bb39eed
 - Summary: 为复习页新增英文朗读能力，并把“基于 git diff 维护功能日志”接入提交流程与部署流程。
 
 ### Features
@@ -32,7 +49,7 @@
 
 ## 2026-03-28 10:20:00 +0800
 
-- Commit: pending
+- Commit: bb39eed
 - Summary: 初始化功能日志维护规范，并新增基于 git diff 生成日志骨架的仓库技能。
 
 ### Features

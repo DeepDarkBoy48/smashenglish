@@ -67,8 +67,10 @@ let wordCardFeed = [];
 let activeThemeMode = DEFAULTS.themeMode;
 let isSettingsOpen = false;
 let runtimeStatusTimer = null;
-let currentSpeechUtterance = null;
 let currentSpeechButton = null;
+let currentSpeechAudio = null;
+const wordAudioCache = new Map();
+let currentSpeechRequestId = 0;
 
 init();
 
@@ -99,6 +101,7 @@ function bindEvents() {
 
   clearBtnEl.addEventListener("click", () => {
     stopWordCardSpeech();
+    clearWordAudioCache();
     wordCardFeed = [];
     renderWordCardFeed();
     setRuntimeStatus("");
@@ -195,6 +198,8 @@ function bindEvents() {
       return;
     }
     if (changes.backendBaseUrl) {
+      stopWordCardSpeech();
+      clearWordAudioCache();
       refreshApiStatus();
     }
     if (changes.themeMode?.newValue) {
@@ -1027,73 +1032,108 @@ function escapeRegExp(value) {
   return String(value || "").replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
 }
 
-function toggleWordCardSpeech(text, buttonEl) {
-  if (!("speechSynthesis" in window)) {
-    setRuntimeStatus("当前浏览器不支持语音朗读", "error");
-    return;
-  }
-
-  if (
-    currentSpeechUtterance &&
-    currentSpeechButton === buttonEl &&
-    window.speechSynthesis.speaking
-  ) {
+async function toggleWordCardSpeech(text, buttonEl) {
+  if (currentSpeechButton === buttonEl && currentSpeechAudio) {
     stopWordCardSpeech();
     return;
   }
 
   stopWordCardSpeech();
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 0.9;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-
-  const voices = window.speechSynthesis.getVoices();
-  const englishVoice = voices.find(
-    (voice) => voice.lang.startsWith("en") && voice.name.includes("English")
-  );
-  if (englishVoice) {
-    utterance.voice = englishVoice;
-  }
-
-  currentSpeechUtterance = utterance;
   currentSpeechButton = buttonEl;
-  currentSpeechButton.classList.add("is-speaking");
-  currentSpeechButton.textContent = "停止";
+  currentSpeechRequestId += 1;
+  const requestId = currentSpeechRequestId;
+  setWordSpeakButtonState(buttonEl, "生成中...", "is-loading");
 
-  utterance.onend = () => {
-    resetWordCardSpeechState();
-  };
-  utterance.onerror = () => {
-    setRuntimeStatus("语音播放出错", "error");
-    resetWordCardSpeechState();
-  };
+  try {
+    let audioUrl = wordAudioCache.get(text);
+    if (!audioUrl) {
+      const audioBlob = await fetchWordReadAloudAudio(text);
+      if (requestId !== currentSpeechRequestId) {
+        return;
+      }
+      audioUrl = URL.createObjectURL(audioBlob);
+      wordAudioCache.set(text, audioUrl);
+    }
 
-  window.speechSynthesis.speak(utterance);
+    if (requestId !== currentSpeechRequestId) {
+      return;
+    }
+
+    const audio = new Audio(audioUrl);
+    currentSpeechAudio = audio;
+    setWordSpeakButtonState(buttonEl, "停止", "is-speaking");
+
+    audio.onended = () => {
+      resetWordCardSpeechState();
+    };
+    audio.onerror = () => {
+      setRuntimeStatus("语音播放出错", "error");
+      resetWordCardSpeechState();
+    };
+
+    await audio.play();
+  } catch (error) {
+    setRuntimeStatus(error instanceof Error ? error.message : "朗读失败", "error");
+    resetWordCardSpeechState();
+  }
 }
 
 function stopWordCardSpeech() {
-  if (!("speechSynthesis" in window)) {
-    resetWordCardSpeechState();
-    return;
-  }
-  if (
-    currentSpeechUtterance ||
-    window.speechSynthesis.speaking ||
-    window.speechSynthesis.pending
-  ) {
-    window.speechSynthesis.cancel();
+  currentSpeechRequestId += 1;
+  if (currentSpeechAudio) {
+    currentSpeechAudio.pause();
+    currentSpeechAudio.currentTime = 0;
   }
   resetWordCardSpeechState();
 }
 
 function resetWordCardSpeechState() {
   if (currentSpeechButton) {
-    currentSpeechButton.classList.remove("is-speaking");
+    currentSpeechButton.classList.remove("is-speaking", "is-loading");
     currentSpeechButton.textContent = "朗读";
   }
-  currentSpeechUtterance = null;
+  currentSpeechAudio = null;
   currentSpeechButton = null;
+}
+
+function setWordSpeakButtonState(buttonEl, text, className) {
+  if (!buttonEl) {
+    return;
+  }
+  buttonEl.classList.remove("is-speaking", "is-loading");
+  if (className) {
+    buttonEl.classList.add(className);
+  }
+  buttonEl.textContent = text;
+}
+
+async function fetchWordReadAloudAudio(text) {
+  const settings = await chrome.storage.local.get(DEFAULTS);
+  const backendBaseUrl = normalizeBaseUrl(
+    settings.backendBaseUrl || DEFAULTS.backendBaseUrl
+  );
+
+  const response = await fetch(`${backendBaseUrl}/api/fastapi/review/read-aloud`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      text
+    })
+  });
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data?.detail || data?.message || "后端朗读请求失败");
+  }
+
+  return response.blob();
+}
+
+function clearWordAudioCache() {
+  wordAudioCache.forEach((url) => {
+    URL.revokeObjectURL(url);
+  });
+  wordAudioCache.clear();
 }
