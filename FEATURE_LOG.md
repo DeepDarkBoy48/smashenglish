@@ -2,6 +2,24 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-04-08 11:38:00 +0800
+
+- Commit: pending
+- Summary: 收紧精读页与浏览器插件的已有释义复用条件，避免同词不同句时错配旧解析。
+
+### Features
+
+- 精读页点击单词时，面板内已有词条结果现在会同时校验“单词 + 原句上下文”，只有命中同一句时才复用，避免把别的句子的解析直接拿来展示。
+- 词库 encounter 复用逻辑抽成公共匹配函数，统一按规范化后的上下文句子做精确匹配，并优先复用当前精读笔记对应的 encounter。
+- 浏览器侧边栏插件的“已有释义”命中也同步收紧为“单词相同且原句一致”才返回缓存卡片，未命中时会继续走 AI 生成，避免截图里那类原句与深度解析不配套的问题。
+
+### Files
+
+- `FEATURE_LOG.md`
+- `smash-english-standalone/src/components/IntensiveReadingPage.tsx`
+- `smash-english-standalone/src/utils/savedWords.ts`
+- `chrome-sidepanel-translator/service-worker.js`
+
 ## 2026-03-29 11:17:54 +0800
 
 - Commit: 3f2922c

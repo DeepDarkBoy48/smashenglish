@@ -22,7 +22,13 @@ import { ResultDisplay } from './ResultDisplay';
 import { QuickLookupDisplay } from './AiSharedComponents';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { buildLocalEncounter, getSavedWordEncounters, upsertLocalSavedWord } from '../utils/savedWords';
+import {
+  buildLocalEncounter,
+  findMatchingSavedWordEncounter,
+  getSavedWordEncounters,
+  normalizeSavedContext,
+  upsertLocalSavedWord
+} from '../utils/savedWords';
 
 interface ResultItem {
   id: string;
@@ -428,14 +434,18 @@ export const IntensiveReadingPage: React.FC<IntensiveReadingPageProps> = ({ init
   
   // handleSaveNotebook removed - integrated into handleStartReading
 
-   const handleWordClick = async (word: string, context: string) => {
+  const handleWordClick = async (word: string, context: string) => {
     const cleanWord = word.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").trim();
     if (!cleanWord) return;
     const normalized = normalizeWord(cleanWord);
+    const normalizedContext = normalizeSavedContext(context);
 
-    // Reuse existing result card in panel if already analyzed before.
+    // Reuse an existing panel result only when both the word and its source sentence match.
     const existingResult = results.find(
-      (res) => res.type === 'dictionary' && normalizeWord(res.data?.word || '') === normalized
+      (res) =>
+        res.type === 'dictionary' &&
+        normalizeWord(res.data?.word || '') === normalized &&
+        normalizeSavedContext(res.data?.originalSentence || '') === normalizedContext
     );
     if (existingResult) {
       focusExistingResult(existingResult.id);
@@ -443,27 +453,19 @@ export const IntensiveReadingPage: React.FC<IntensiveReadingPageProps> = ({ init
       return;
     }
 
-    // Only reuse a cached lookup when this article already has its own encounter for the word.
-    const sameWordSaved = savedWordsList.filter((item) => normalizeWord(item.word || "") === normalized);
-    const prioritizedSaved = notebookId
-      ? sameWordSaved.find((item) => getSavedWordEncounters(item).some(enc => enc.reading_id === notebookId))
-      : sameWordSaved[0];
-    const prioritizedEncounter = prioritizedSaved
-      ? (
-        notebookId
-          ? getSavedWordEncounters(prioritizedSaved).find(enc => enc.reading_id === notebookId) || null
-          : getSavedWordEncounters(prioritizedSaved)[0] || null
-      )
-      : null;
-    const cachedData = prioritizedEncounter?.lookup;
-    if (prioritizedSaved && cachedData && typeof cachedData === 'object') {
+    // Reuse a saved lookup only when both the word and the exact source sentence match.
+    const matchedSavedEncounter = findMatchingSavedWordEncounter(savedWordsList, cleanWord, context, {
+      readingId: notebookId
+    });
+    const cachedData = matchedSavedEncounter?.encounter?.lookup;
+    if (matchedSavedEncounter && cachedData && typeof cachedData === 'object') {
       addResult('dictionary', {
         ...cachedData,
-        word: cachedData.word || prioritizedSaved.word || cleanWord,
+        word: cachedData.word || matchedSavedEncounter.word.word || cleanWord,
         originalSentence: context,
-        url: prioritizedEncounter?.url,
-        reading_id: prioritizedEncounter?.reading_id,
-        video_id: prioritizedEncounter?.video_id
+        url: matchedSavedEncounter.encounter.url,
+        reading_id: matchedSavedEncounter.encounter.reading_id,
+        video_id: matchedSavedEncounter.encounter.video_id
       });
       if (highlightedWord) setHighlightedWord('');
       return;

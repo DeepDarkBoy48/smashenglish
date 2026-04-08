@@ -4,6 +4,8 @@ const sortEncountersDesc = (a: SavedWordEncounter, b: SavedWordEncounter) =>
   (b.created_at || '').localeCompare(a.created_at || '');
 
 const normalizeSavedWord = (value: string | undefined) => (value || '').trim().toLowerCase();
+export const normalizeSavedContext = (value: string | undefined) =>
+  (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
 
 export const getSavedWordEncounters = (word: Pick<SavedWord, 'data'>): SavedWordEncounter[] => {
   if (!Array.isArray(word.data?.encounters)) {
@@ -18,6 +20,44 @@ export const getSavedWordLatestEncounter = (word: Pick<SavedWord, 'data'>): Save
 
 export const getSavedWordLatestLookup = (word: Pick<SavedWord, 'data'>): QuickLookupResult | null =>
   getSavedWordLatestEncounter(word)?.lookup ?? null;
+
+export const findMatchingSavedWordEncounter = (
+  words: SavedWord[],
+  targetWord: string,
+  targetContext: string,
+  options: {
+    readingId?: number | null;
+    videoId?: number | null;
+  } = {}
+): { word: SavedWord; encounter: SavedWordEncounter } | null => {
+  const normalizedWord = normalizeSavedWord(targetWord);
+  const normalizedContext = normalizeSavedContext(targetContext);
+
+  if (!normalizedWord || !normalizedContext) {
+    return null;
+  }
+
+  const candidates = words.filter((item) => normalizeSavedWord(item.word) === normalizedWord);
+
+  const matchesContext = (encounter: SavedWordEncounter) =>
+    normalizeSavedContext(encounter.context) === normalizedContext;
+
+  const preferredEncounter = candidates
+    .flatMap((word) => getSavedWordEncounters(word).map((encounter) => ({ word, encounter })))
+    .find(({ encounter }) =>
+      matchesContext(encounter) &&
+      ((options.readingId != null && encounter.reading_id === options.readingId) ||
+        (options.videoId != null && encounter.video_id === options.videoId))
+    );
+
+  if (preferredEncounter) {
+    return preferredEncounter;
+  }
+
+  return candidates
+    .flatMap((word) => getSavedWordEncounters(word).map((encounter) => ({ word, encounter })))
+    .find(({ encounter }) => matchesContext(encounter)) ?? null;
+};
 
 export const buildLocalEncounter = (
   word: string,

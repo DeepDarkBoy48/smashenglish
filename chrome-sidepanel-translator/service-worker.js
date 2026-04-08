@@ -418,7 +418,20 @@ async function lookupCachedWordCard(payload) {
     return null;
   }
 
-  const rankedEncounters = [...matchedWord.encounters].sort((left, right) => {
+  const targetContext = normalizeContext(context);
+  if (!targetContext) {
+    return null;
+  }
+
+  const exactContextMatches = matchedWord.encounters.filter((encounter) => {
+    return normalizeContext(encounter?.context || "") === targetContext;
+  });
+
+  if (!exactContextMatches.length) {
+    return null;
+  }
+
+  const rankedEncounters = [...exactContextMatches].sort((left, right) => {
     return scoreEncounter(right, context, url) - scoreEncounter(left, context, url);
   });
   const encounter = rankedEncounters[0];
