@@ -4,7 +4,7 @@
 
 ## 2026-04-08 11:38:00 +0800
 
-- Commit: pending
+- Commit: c3cdd90
 - Summary: 收紧精读页与浏览器插件的已有释义复用条件，避免同词不同句时错配旧解析。
 
 ### Features
