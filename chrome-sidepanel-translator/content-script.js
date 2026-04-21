@@ -35,6 +35,8 @@ let savedWordSet = new Set();
 let highlighterReady = false;
 let highlightEnabled = true;
 let activeYouTubeCaptionHighlightKey = "";
+let activeYouTubeCaptionHoverKey = "";
+let youtubeHoverOverlay = null;
 
 init();
 
@@ -126,19 +128,33 @@ function bindYouTubeCaptionHoverEvents() {
   document.addEventListener(
     "mousemove",
     (event) => {
+      // Disable hover effects while any mouse button is pressed (e.g., dragging captions)
+      if (event.buttons !== 0) {
+        hideYouTubeHoverOverlay();
+        activeYouTubeCaptionHoverKey = "";
+        return;
+      }
+
       const detail = getYouTubeCaptionWordDetail(event);
       if (!detail?.word) {
-        clearActiveYouTubeCaptionHighlight();
+        hideYouTubeHoverOverlay();
+        activeYouTubeCaptionHoverKey = "";
         return;
       }
 
       const nextKey = getYouTubeCaptionHighlightKey(detail);
-      if (nextKey === activeYouTubeCaptionHighlightKey) {
+      if (nextKey === activeYouTubeCaptionHoverKey) {
         return;
       }
 
-      clearActiveYouTubeCaptionHighlight();
-      highlightYouTubeCaptionWord(detail);
+      activeYouTubeCaptionHoverKey = nextKey;
+
+      // If this word is already highlighted via click (DOM span), we don't need the hover overlay
+      if (nextKey === activeYouTubeCaptionHighlightKey) {
+        hideYouTubeHoverOverlay();
+      } else {
+        showYouTubeHoverOverlay(detail);
+      }
     },
     true
   );
@@ -153,7 +169,8 @@ function bindYouTubeCaptionHoverEvents() {
       if (!target.closest(".ytp-caption-window-container")) {
         return;
       }
-      clearActiveYouTubeCaptionHighlight();
+      hideYouTubeHoverOverlay();
+      activeYouTubeCaptionHoverKey = "";
     },
     true
   );
@@ -412,6 +429,7 @@ function getYouTubeCaptionPayload(event) {
   }
 
   clearActiveYouTubeCaptionHighlight();
+  hideYouTubeHoverOverlay();
   highlightYouTubeCaptionWord(detail);
   pauseYouTubeVideo();
 
@@ -446,8 +464,8 @@ function getYouTubeCaptionWordDetail(event) {
     return {
       word,
       textNode: existingHighlight.firstChild,
-      start: 0,
-      end: (existingHighlight.textContent || "").length,
+      start: Number(existingHighlight.getAttribute("data-smash-start") || 0),
+      end: Number(existingHighlight.getAttribute("data-smash-end") || (existingHighlight.textContent || "").length),
       token: existingHighlight.textContent || "",
       captionContainer
     };
@@ -728,6 +746,8 @@ function highlightYouTubeCaptionWord(detail) {
   mark.className = YOUTUBE_CAPTION_WORD_CLASS;
   mark.setAttribute(YOUTUBE_CAPTION_WORD_ATTR, detail.word || "");
   mark.setAttribute(YOUTUBE_CAPTION_WORD_ACTIVE_ATTR, "true");
+  mark.setAttribute("data-smash-start", String(start));
+  mark.setAttribute("data-smash-end", String(end));
   mark.textContent = text.slice(start, end);
   fragment.appendChild(mark);
 
@@ -737,6 +757,48 @@ function highlightYouTubeCaptionWord(detail) {
 
   textNode.parentNode?.replaceChild(fragment, textNode);
   activeYouTubeCaptionHighlightKey = getYouTubeCaptionHighlightKey(detail);
+}
+
+function showYouTubeHoverOverlay(detail) {
+  if (!youtubeHoverOverlay) {
+    youtubeHoverOverlay = document.createElement("div");
+    youtubeHoverOverlay.id = "smash-youtube-hover-overlay";
+    Object.assign(youtubeHoverOverlay.style, {
+      position: "absolute",
+      pointerEvents: "none",
+      zIndex: "2147483647",
+      background: "rgba(84, 109, 255, 0.35)",
+      borderRadius: "0.2em",
+      boxShadow: "0 0 0 1px rgba(84, 109, 255, 0.4)",
+      transition: "opacity 0.1s ease",
+      display: "none"
+    });
+    document.body.appendChild(youtubeHoverOverlay);
+  }
+
+  const range = document.createRange();
+  try {
+    range.setStart(detail.textNode, detail.start);
+    range.setEnd(detail.textNode, detail.end);
+    const rect = range.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      youtubeHoverOverlay.style.display = "block";
+      youtubeHoverOverlay.style.left = `${rect.left + window.scrollX - 2}px`;
+      youtubeHoverOverlay.style.top = `${rect.top + window.scrollY - 1}px`;
+      youtubeHoverOverlay.style.width = `${rect.width + 4}px`;
+      youtubeHoverOverlay.style.height = `${rect.height + 2}px`;
+    } else {
+      youtubeHoverOverlay.style.display = "none";
+    }
+  } catch (_e) {
+    youtubeHoverOverlay.style.display = "none";
+  }
+}
+
+function hideYouTubeHoverOverlay() {
+  if (youtubeHoverOverlay) {
+    youtubeHoverOverlay.style.display = "none";
+  }
 }
 
 function pauseYouTubeVideo() {
@@ -755,14 +817,11 @@ function pauseYouTubeVideo() {
 }
 
 function getYouTubeCaptionHighlightKey(detail) {
-  const textNode = detail?.textNode;
-  const parent = textNode?.parentNode;
-  const parentText = parent?.textContent || "";
   return [
     detail?.word || "",
     Number(detail?.start ?? -1),
     Number(detail?.end ?? -1),
-    parentText
+    detail?.captionContainer?.textContent || ""
   ].join("::");
 }
 
@@ -826,8 +885,12 @@ function injectHighlightStyles() {
       color: inherit;
       cursor: pointer;
       font-weight: 600;
-      padding: 0 0.08em;
+      padding: 0.1em 0.2em;
+      margin: -0.1em -0.2em;
+      box-decoration-break: clone;
+      -webkit-box-decoration-break: clone;
       transition: background 120ms ease, box-shadow 120ms ease;
+      display: inline;
     }
 
     .${HIGHLIGHT_CLASS}:hover {
@@ -836,13 +899,17 @@ function injectHighlightStyles() {
     }
 
     .${YOUTUBE_CAPTION_WORD_CLASS} {
-      background: rgba(84, 109, 255, 0.96);
-      border-radius: 0.16em;
-      box-shadow: 0 0 0 2px rgba(84, 109, 255, 0.24);
-      color: #ffffff;
-      cursor: pointer;
-      display: inline;
-      padding: 0 0.04em;
+      background: rgba(84, 109, 255, 0.96) !important;
+      border-radius: 0.2em !important;
+      box-shadow: 0 0 0 1px rgba(84, 109, 255, 0.4) !important;
+      color: #ffffff !important;
+      cursor: pointer !important;
+      display: inline !important;
+      padding: 0.05em 0.15em !important;
+      margin: -0.05em -0.15em !important;
+      box-decoration-break: clone !important;
+      -webkit-box-decoration-break: clone !important;
+      line-height: inherit !important;
     }
   `;
   (document.head || document.documentElement).appendChild(style);

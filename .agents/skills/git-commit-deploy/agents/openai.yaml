@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git Commit Deploy"
+  short_description: "Commit the SmashEnglish monorepo, then deploy backend and frontend via SSH"
+  default_prompt: "Check the backend DB host, commit and push the monorepo, then SSH into the server and deploy backend plus frontend from /root/smashenglish"

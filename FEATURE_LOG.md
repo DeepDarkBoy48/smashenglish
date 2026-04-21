@@ -2,6 +2,28 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-04-21 11:32:00 +0800
+
+- Commit: pending
+- Summary: 优化复习页卡片阅读节奏与字幕工具引导，同时提升 YouTube 字幕悬停高亮体验并补强提交日志规范。
+
+### Features
+
+- 重做复习页单词卡片布局，补上更清晰的当前进度、上下文高亮、展开后的释义分区和底部评分区，让“先回忆再看答案”的节奏更自然。
+- 视频字幕笔记创建面板新增外部字幕下载入口和三步引导，帮助用户先拿到 `.srt` 再回到站内上传，降低导入门槛。
+- 浏览器插件的 YouTube 字幕交互新增悬停高亮层，拖动时自动关闭悬停效果，并修正点击后高亮定位，减少字幕区域误闪和选词错位。
+- 提交日志技能补充“提交后必须回填真实 commit hash”的约束，部署技能也新增 agent 配置，便于后续把日志维护和提交流程串起来。
+
+### Files
+
+- `FEATURE_LOG.md`
+- `.agents/skills/git-diff-feature-log/SKILL.md`
+- `.agents/skills/git-commit-deploy/agents/openai.yaml`
+- `chrome-sidepanel-translator/content-script.js`
+- `my-fastapi-app/main.py`
+- `smash-english-standalone/src/components/ReviewPage.tsx`
+- `smash-english-standalone/src/components/VideoNotebookPage.tsx`
+
 ## 2026-04-08 11:38:00 +0800
 
 - Commit: c3cdd90

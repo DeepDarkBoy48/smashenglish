@@ -8,7 +8,8 @@ import {
   Loader2, 
   Clock,
   PlayCircle,
-  Edit2
+  Edit2,
+  ExternalLink
 } from 'lucide-react';
 import { listNotebooksService, createNotebookService, updateNotebookService, deleteNotebookService } from '../services/geminiService';
 import type { VideoNotebook } from '../types';
@@ -282,6 +283,53 @@ export const VideoNotebookPage: React.FC<VideoNotebookPageProps> = ({ onSelectNo
                   value={newVideoUrl}
                   onChange={(e) => setNewVideoUrl(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-3 rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-800/40 p-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">免费获取字幕</h3>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    先去外部工具把字幕下载成 SRT，再回来这里上传，整体会更稳也更简单。
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <a
+                    href="https://grabcaptions.com/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 transition-all hover:border-pink-400 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Grab Captions</div>
+                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">粘贴 YouTube 链接，选字幕轨道，直接下载 `.srt`</div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 shrink-0 text-pink-500" />
+                    </div>
+                  </a>
+
+                  <a
+                    href="https://www.notelm.ai/youtube-subtitle-downloader"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-4 py-3 transition-all hover:border-pink-400 hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">Chrome 字幕插件</div>
+                        <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">装插件后打开 YouTube 视频，点扩展图标下载 `.srt`</div>
+                      </div>
+                      <ExternalLink className="h-4 w-4 shrink-0 text-pink-500" />
+                    </div>
+                  </a>
+                </div>
+
+                <div className="space-y-1 text-xs text-gray-500 dark:text-gray-400">
+                  <p>1. 把上面的 YouTube 链接复制到工具里。</p>
+                  <p>2. 下载 `.srt` 文件。</p>
+                  <p>3. 回到这里点“选择文件上传”，或者把 SRT 内容直接粘贴到下方。</p>
+                </div>
               </div>
 
               <div className="space-y-2">
