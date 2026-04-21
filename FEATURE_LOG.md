@@ -4,7 +4,7 @@
 
 ## 2026-04-21 11:32:00 +0800
 
-- Commit: pending
+- Commit: b69c7ab
 - Summary: 优化复习页卡片阅读节奏与字幕工具引导，同时提升 YouTube 字幕悬停高亮体验并补强提交日志规范。
 
 ### Features
