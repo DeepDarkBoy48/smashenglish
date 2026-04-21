@@ -4,7 +4,7 @@
 
 ## 2026-04-21 11:38:00 +0800
 
-- Commit: pending
+- Commit: 982ad68
 - Summary: 为正式部署切回后端容器数据库地址，避免服务器继续连接本地开发用远程 MySQL。
 
 ### Features
