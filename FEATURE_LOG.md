@@ -2,6 +2,20 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-04-21 11:38:00 +0800
+
+- Commit: pending
+- Summary: 为正式部署切回后端容器数据库地址，避免服务器继续连接本地开发用远程 MySQL。
+
+### Features
+
+- 将后端数据库 host 从本地开发时使用的 `47.79.43.73` 切回部署环境使用的 `mysql-container`，保证服务器内 FastAPI 容器走同一 Docker 网络访问数据库。
+
+### Files
+
+- `FEATURE_LOG.md`
+- `my-fastapi-app/main.py`
+
 ## 2026-04-21 11:32:00 +0800
 
 - Commit: b69c7ab
