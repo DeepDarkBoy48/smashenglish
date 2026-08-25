@@ -1,6 +1,6 @@
 ---
 name: git-commit-deploy
-description: "在 SmashEnglish 项目需要提交并部署到服务器时使用。当前 Git 提交与推送统一走 monorepo `git@github.com:DeepDarkBoy48/smashenglish.git`；部署前先检查后端数据库 host；只要本次部署流程里使用了 git 提交或推送，必须先调用仓库内 `git-diff-feature-log` skill 维护 `FEATURE_LOG.md`；然后优先用 `sshpass` 登录 `47.79.43.73`，按服务器实际目录执行后端与前端部署，并做容器校验。"
+description: "在 SmashEnglish 项目需要提交并部署到服务器时使用。当前 Git 提交与推送统一走 monorepo `git@github.com:DeepDarkBoy48/smashenglish.git`；部署前先检查后端数据库 host；只要本次部署流程里使用了 git 提交或推送，必须先调用仓库内 `git-diff-feature-log` skill 维护 `FEATURE_LOG.md`；然后优先用 `ssh clawcloud`（~/.ssh/config 别名 + 密钥）登录 ClawCloud 服务器 `47.79.43.73`，按服务器实际目录执行后端与前端部署，并做容器校验。"
 ---
 
 # Git Commit Deploy
@@ -34,32 +34,43 @@ description: "在 SmashEnglish 项目需要提交并部署到服务器时使用�
 
 服务器固定信息：
 
+- 服务商：**ClawCloud VPS**。注意不是 ZgoCloud——`~/.ssh/config` 里的 `zgocloud`（`23.169.184.243`）是另一台美国 VPS，与本项目部署无关，不要登错
 - Host: `47.79.43.73`
 - User: `root`
-- Password: `Hl5M;0feB+64zZ`
+- 首选认证：`~/.ssh/config` 已配置别名 `clawcloud`（`IdentityFile ~/.ssh/id_ed25519`），直接用密钥登录
+- Password: `Hl5M;0feB+64zZ`（仅作密钥失效时的 fallback）
 
-## 1. 本机工具选择规则
+## 1. 连接方式选择规则
 
 优先级固定如下：
 
-1. 若本机有 `sshpass`，优先使用 `sshpass`
-2. 若没有 `sshpass`，再退回 `expect`
-3. 不要先尝试纯 `ssh` 再等待失败，除非你明确知道本机已配置可用密钥
+1. 首选 `ssh clawcloud`——`~/.ssh/config` 已配置别名和密钥，无需密码
+2. 密钥失效时退回 `sshpass` 密码登录
+3. 若没有 `sshpass`，再退回 `expect`
 
 快速检查：
 
 ```bash
+ssh -o ConnectTimeout=10 clawcloud "echo ok"
 which sshpass
-which expect
 ```
 
-推荐连接方式：
+连接方式：
 
 ```bash
+# 首选
+ssh clawcloud
+
+# fallback
 sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
 ```
 
 注意：服务器上不保证安装了 `rg`，远程检查默认使用 `grep`、`find`、`test`。
+
+### 连接故障判断
+
+- 若 22 端口报 `Connection timed out during banner exchange`，但 80/8083 网站服务正常：说明服务器活着，是 sshd 或安全组层面问题（常见为 fail2ban 封禁当前 IP、sshd 异常）。此时本地重试无意义，去 ClawCloud 控制台用 VNC/救援模式检查 sshd 与防火墙。
+- 该服务器禁 ICMP，`ping` 不通不代表宕机，以 80/8083 端口探测为准。
 
 ## 2. 强制检查后端数据库 host
 
@@ -116,7 +127,8 @@ git push origin main
 先连接服务器：
 
 ```bash
-sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
+ssh clawcloud
+# fallback: sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
 ```
 
 ## 5. 服务器部署
@@ -193,7 +205,7 @@ docker logs --tail=100 my-fastapi-container
 2. 在根仓库执行 `git status`
 3. 如果准备提交或推送，先执行 `git-diff-feature-log`，更新 `FEATURE_LOG.md`
 4. 在根仓库完成 `git add`、`git commit`、`git push origin main`
-5. 用 `sshpass` 登录服务器
+5. 用 `ssh clawcloud`（fallback 为 sshpass 密码）登录服务器
 6. 在 `/root/smashenglish` 拉取最新代码
 7. 在新目录下执行后端、前端部署
 8. 用 `docker ps ... | grep -E ...` 做校验
