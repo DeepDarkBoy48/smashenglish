@@ -171,24 +171,26 @@ export const DictionaryPage: React.FC<DictionaryPageProps> = ({ initialResult, o
 
     return (
         <div className="w-full max-w-4xl mx-auto animate-fade-in pb-12">
-            <div className="text-center space-y-4 mb-8">
-                <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-gray-50 font-serif">
+            {/* Compact Header */}
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 mb-4">
+                <h1 className="flex items-center gap-2 text-lg md:text-xl font-bold text-gray-900 dark:text-gray-50 font-serif">
+                    <Book className="w-4 h-4 md:w-5 md:h-5 text-pink-500" />
                     AI 智能词典
                 </h1>
-                <p className="text-gray-600 dark:text-gray-400">
+                <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
                     深度解析单词含义、词性搭配及地道例句
                 </p>
             </div>
 
             {/* Search Box */}
-            <div className="max-w-xl mx-auto mb-12">
+            <div className="max-w-xl mb-6">
                 <form onSubmit={handleSearch} className="relative">
                     <input
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder="输入单词或词组 (例如: take up, resilience)"
-                        className="w-full pl-5 pr-14 py-4 text-lg rounded-2xl bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-gray-700 shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 focus:border-pink-400 dark:focus:border-pink-500 focus:ring-4 focus:ring-pink-50 dark:focus:ring-pink-900/50 transition-all outline-none text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                        className="w-full pl-5 pr-14 py-3 text-base rounded-2xl bg-white dark:bg-[#0d1117] border border-gray-200 dark:border-gray-700 shadow-lg shadow-gray-200/50 dark:shadow-gray-900/50 focus:border-pink-400 dark:focus:border-pink-500 focus:ring-4 focus:ring-pink-50 dark:focus:ring-pink-900/50 transition-all outline-none text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                         disabled={isLoading}
                     />
                     <button

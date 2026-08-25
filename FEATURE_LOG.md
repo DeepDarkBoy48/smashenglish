@@ -2,6 +2,27 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-08-26 02:15:00 +0800
+
+- Commit: pending
+- Summary: 压缩句法、词典、写作三个功能页占满首屏的 Hero 头部为单行紧凑页头，打开页面即可看到输入区与内容。
+
+### Features
+
+- 句法页移除居中大标题 Hero（徽章 + text-5xl 标题 + 两行副标题），改为左对齐单行页头（图标 + 标题 + 一句话说明），输入卡片上移并左对齐，分析结果首屏可见。
+- 词典页标题区与搜索区合并压缩，搜索框加粗留白与字号收窄（`py-4 text-lg` → `py-3 text-base`），单词结果首屏可见多个释义。
+- 写作页居中标题堆叠改为左右单行页头：左侧标题 + 说明，右侧模式选择器；下拉菜单锚点从居中改为右对齐，避免右移后溢出。
+- 全局容器顶部留白 `md:py-8` 收紧为 `md:py-5`，句法输入卡片内部留白同步收窄，「试一试」示例词改为左对齐。
+- 翻译、视频/精读笔记本、词库管理页原本已是紧凑页头，未改动。
+
+### Files
+
+- `smash-english-standalone/src/App.tsx`
+- `smash-english-standalone/src/components/DictionaryPage.tsx`
+- `smash-english-standalone/src/components/InputArea.tsx`
+- `smash-english-standalone/src/components/WritingPage.tsx`
+- `FEATURE_LOG.md`
+
 ## 2026-08-26 01:25:00 +0800
 
 - Commit: 3106073

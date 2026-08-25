@@ -457,7 +457,7 @@ const App: React.FC = () => {
     if (activeTab === 'youtube' || activeTab === 'reading') {
       return 'xl:px-4 xl:py-2 px-0 py-0'; // Minimal padding for full-page modes
     }
-    return 'px-2 py-4 md:px-4 md:py-8';
+    return 'px-2 py-3 md:px-4 md:py-5';
   };
 
   return (
@@ -474,24 +474,20 @@ const App: React.FC = () => {
           <main className={`flex-1 ${activeTab === 'youtube' || activeTab === 'reading' ? 'overflow-hidden' : 'overflow-y-auto'} ${getContainerPadding()} flex flex-col ${activeTab === 'youtube' || activeTab === 'reading' || isImmersive ? 'gap-0' : 'gap-6 md:gap-8'} relative transition-all duration-300 ease-in-out ${activeTab === 'writing' || activeTab === 'youtube' || activeTab === 'reading' ? '' : 'items-center'}`}>
 
             {activeTab === 'analyzer' && (
-              <div className="w-full max-w-5xl flex flex-col gap-8">
-                {/* Hero Section */}
-                <div className="text-center space-y-4 mb-4">
-                  <div className="inline-flex items-center justify-center p-2 bg-pink-50 dark:bg-pink-950/50 rounded-full text-pink-600 dark:text-pink-400 mb-2">
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    <span className="text-sm font-medium">AI 驱动的英语语法分析</span>
-                  </div>
-                  <h1 className="text-2xl md:text-5xl font-bold tracking-tight text-gray-900 dark:text-gray-50 font-serif">
+              <div className="w-full max-w-5xl flex flex-col gap-5 md:gap-6">
+                {/* Compact Header */}
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                  <h1 className="flex items-center gap-2 text-lg md:text-xl font-bold tracking-tight text-gray-900 dark:text-gray-50 font-serif">
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-pink-500" />
                     英语句子成分可视化
                   </h1>
-                  <p className="text-sm md:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                    输入任何英语句子，立刻解析其主谓宾定状补结构。
-                    <br className="hidden md:block" />适合英语学习者、教师及语言爱好者。
+                  <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
+                    输入任何英语句子，立刻解析其主谓宾定状补结构
                   </p>
                 </div>
 
                 {/* Input Section */}
-                <div className="w-full max-w-2xl mx-auto">
+                <div className="w-full max-w-2xl">
                   <InputArea onAnalyze={handleAnalyze} isLoading={isAnalyzerLoading} initialValue={DEMO_RESULT.englishSentence} />
                 </div>
 

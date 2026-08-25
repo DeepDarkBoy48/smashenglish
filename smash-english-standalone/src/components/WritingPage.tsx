@@ -254,18 +254,18 @@ export const WritingPage: React.FC<WritingPageProps> = ({ initialResult, onResul
 
     return (
         <div className="w-full h-[calc(100vh-12rem)] md:h-[calc(100vh-10rem)] flex flex-col gap-2 md:gap-4 animate-fade-in font-sans">
-            {/* Header - Centered Layout (Compact on Mobile) */}
-            <div className="flex flex-col items-center shrink-0 gap-3 md:gap-6 mb-1 md:mb-2">
-                <div className="text-center">
-                    <h1 className="text-xl md:text-3xl font-bold text-slate-900 dark:text-slate-50 font-serif flex items-center justify-center gap-2">
+            {/* Header - Compact Row */}
+            <div className="flex flex-wrap items-center justify-between shrink-0 gap-2 md:gap-3 mb-1 md:mb-2">
+                <div className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+                    <h1 className="text-lg md:text-xl font-bold text-slate-900 dark:text-slate-50 font-serif flex items-center gap-2">
                         {pageMode === 'writing' ? (
-                            <PenTool className="w-5 h-5 md:w-6 md:h-6 text-pink-500 dark:text-pink-400" />
+                            <PenTool className="w-4 h-4 md:w-5 md:h-5 text-pink-500 dark:text-pink-400" />
                         ) : (
-                            <BookOpen className="w-5 h-5 md:w-6 md:h-6 text-amber-500 dark:text-amber-400" />
+                            <BookOpen className="w-4 h-4 md:w-5 md:h-5 text-amber-500 dark:text-amber-400" />
                         )}
                         {pageMode === 'writing' ? 'AI 写作润色' : 'AI 文章精读'}
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs md:text-sm mt-1 md:mt-2">
+                    <p className="text-slate-400 dark:text-slate-500 text-xs md:text-sm">
                         {PAGE_MODES.find(m => m.value === pageMode)?.description}
                     </p>
                 </div>
@@ -295,7 +295,7 @@ export const WritingPage: React.FC<WritingPageProps> = ({ initialResult, onResul
 
                     {/* Dropdown Menu */}
                     {isPageModeDropdownOpen && (
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 animate-fade-in">
+                        <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 animate-fade-in">
                             {PAGE_MODES.map((m) => {
                                 const Icon = m.icon;
                                 const isActive = pageMode === m.value;
