@@ -4,7 +4,7 @@
 
 ## 2026-08-26 01:25:00 +0800
 
-- Commit: pending
+- Commit: 3106073
 - Summary: 部署目标从已退役的 ClawCloud 迁移到 ZgoCloud 服务器，后端端口收紧为本机回环，仅经网关反代对外。
 
 ### Features
