@@ -11,15 +11,15 @@ description: "在 SmashEnglish 项目需要提交并部署到服务器时使用�
 
 本地工作区根目录：
 
-`/Users/robin/Programming/littleWebsite/smashenglish`
+`/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish`
 
 当前 Git 仓库只有一个，就是工作区根目录本身。提交和推送默认都在根目录执行，不再分别进入 `my-fastapi-app` 和 `smash-english-standalone` 作为独立仓库处理。
 
 主要子项目：
 
-- 后端：`/Users/robin/Programming/littleWebsite/smashenglish/my-fastapi-app`
-- 前端：`/Users/robin/Programming/littleWebsite/smashenglish/smash-english-standalone`
-- 浏览器扩展：`/Users/robin/Programming/littleWebsite/smashenglish/chrome-sidepanel-translator`
+- 后端：`/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/my-fastapi-app`
+- 前端：`/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/smash-english-standalone`
+- 浏览器扩展：`/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/chrome-sidepanel-translator`
 
 默认部署对象仍然只有：
 
@@ -65,7 +65,7 @@ sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
 
 检查文件：
 
-`/Users/robin/Programming/littleWebsite/smashenglish/my-fastapi-app/main.py`
+`/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/my-fastapi-app/main.py`
 
 必须满足：
 
@@ -75,7 +75,7 @@ sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
 检查命令：
 
 ```bash
-rg -n "47\.79\.43\.73|mysql-container" /Users/robin/Programming/littleWebsite/smashenglish/my-fastapi-app/main.py
+rg -n "47\.79\.43\.73|mysql-container" /Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/my-fastapi-app/main.py
 ```
 
 如果不满足，先修正配置，再继续提交和部署。
@@ -85,7 +85,7 @@ rg -n "47\.79\.43\.73|mysql-container" /Users/robin/Programming/littleWebsite/sm
 提交、推送都在根仓库执行：
 
 ```bash
-cd /Users/robin/Programming/littleWebsite/smashenglish
+cd /Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish
 git status --short
 git add <相关文件>
 git commit -m "<message>"
@@ -94,7 +94,7 @@ git push origin main
 
 执行规则：
 
-- 只要本次部署流程里涉及 `git add`、`git commit`、`git push` 中任意一步，必须先执行仓库内 [`git-diff-feature-log`](/Users/robin/Programming/littleWebsite/smashenglish/.agents/skills/git-diff-feature-log/SKILL.md) 的流程，更新根目录 `FEATURE_LOG.md`
+- 只要本次部署流程里涉及 `git add`、`git commit`、`git push` 中任意一步，必须先执行仓库内 [`git-diff-feature-log`](/Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/.agents/skills/git-diff-feature-log/SKILL.md) 的流程，更新根目录 `FEATURE_LOG.md`
 - 维护功能日志时，优先基于 `git diff --cached`；如果还没暂存，则基于 `git diff`
 - 只要有本地改动，统一在根仓库提交
 - 提交信息应该概括本次后端、前端或扩展的变更范围

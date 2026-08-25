@@ -493,7 +493,7 @@ async def quick_lookup_service(word: str, context: str, user_api_key: Optional[s
     client = get_client(user_api_key)
 
     prompt = f"""
-    你是一位英语教学专家。请分析单词 "{word}" 在以下句子上下文中的具体含义、词性、语法成分和用法：
+    你是一位面向中文学习者的英语精读老师。请只分析目标词 "{word}" 在给定原句里的真实用法，不要泛泛介绍这个词或句子话题。
     
     **句子上下文**: "{context}"
     
@@ -504,16 +504,19 @@ async def quick_lookup_service(word: str, context: str, user_api_key: Optional[s
        - 不要重复单词本身，不要写中文，不要写词典编号。
     3. **partOfSpeech**: 给出这个词在当前语境下的**精准词性缩写**（如：及物动词 vt., 不及物动词 vi., 名词 n., 形容词 adj., 副词 adv., 介词 prep., 连词 conj. 等）。
     4. **grammarRole**: 给出这个词在句子中的**语法成分**（如：主语、谓语、宾语、定语、状语、表语、宾补、同位语等）或**固定搭配/短语**。
-    5. **explanation**: 结合语境进行地道翻译与深度解析。
-       - **全文翻译(必须)**: 首先给出整个原句的地道、口语化的中文翻译。
-       - **用法解析**: 简要解释单词为什么是这个意思及其在句中的具体用法细节（如：是并列结构吗？指代什么？）。
+    5. **explanation**: 写成一段适合直接展示在“AI 深度解析”卡片里的中文讲解，必须包含两个小标题：
+       - **【全文翻译】**: 翻译整个原句，不要写成“这个词意为……”。如果原句不是完整句子，就翻译这个片段。
+       - **【用法解析】**: 只解释目标词在原句中的作用，必须引用原句中的关键搭配或相邻词来说明为什么取这个意思。
+       - 优先回答学习者真正会困惑的点：它修饰谁、和谁构成搭配、表示动作/状态/范围/程度/转折中的哪一种、中文怎么顺。
+       - 不要写空泛背景知识，不要扩展到句子主题的百科介绍；只有当背景直接决定词义时才简短说明。
+       - 不要堆砌“强调了重要性、反映了特点、体现了趋势”这类套话。
        - 如果当前词**不是原型**，必须明确补充：
          - 这个词的原型是什么；
          - 当前用了什么词形/形式（如过去式、过去分词、现在分词、第三人称单数、名词复数、比较级、最高级等）；
          - 为什么这里要用这个形式，它在句中具体表达什么。
        - 如果当前词就是原型，则不需要专门解释词形变化。
        - 如果涉及固定搭配（如 "upload...to..."），请务必指出来。
-       - 结合上下文背景，说明该词传达的语气或具体指代的对象。
+       - 控制在 2-4 句中文内，清楚、具体、有老师现场讲解感。
     6. **baseForm**: 给出这个词的原型/词典原形。
        - 例如：drowning -> drown, better -> good, children -> child。
        - 如果当前词本身就是原型，也要直接返回它自己。
@@ -531,7 +534,7 @@ async def quick_lookup_service(word: str, context: str, user_api_key: Optional[s
       "englishDefinition": "recorded video material that can be edited or published",
       "partOfSpeech": "n.",
       "grammarRole": "宾语 (与 upload 构成动宾短语)",
-      "explanation": "【全文翻译】在这个句子中意为：‘将你的视频素材上传到 YouTube’。\\n\\n【用法解析】这里 'footage' 指的是拍摄好的视频素材。固定搭配 'upload your footage to YouTube' 展示了其在数字媒体语境下的典型用法，特指已完成拍摄、准备进行后期制作或直接上传的视频内容。",
+      "explanation": "【全文翻译】把你的视频素材上传到 YouTube。\\n\\n【用法解析】这里 'footage' 作 'upload' 的宾语，和 'upload ... to YouTube' 构成“把……上传到 YouTube”的结构。它指已经拍摄好的视频素材，不是泛指普通的视频或照片。",
       "baseForm": "footage",
       "otherMeanings": [
         {{ "meaning": "英尺长度", "partOfSpeech": "n.", "example": "The room has a lot of square footage." }}

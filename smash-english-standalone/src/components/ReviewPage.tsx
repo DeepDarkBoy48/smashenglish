@@ -377,92 +377,96 @@ export const ReviewPage: React.FC<ReviewPageProps> = ({ onBack }) => {
   const currentCardOrder = currentCard ? Math.min(completedCount + currentCardIndex + 1, words.length) : completedCount;
   const cardProgressPercent = words.length ? Math.max((currentCardOrder / words.length) * 100, 4) : 0;
 
+  const articleTypeLabel = article?.article_type ? article.article_type.toUpperCase() : '待生成';
+
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-8 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 px-4">
-      {/* Top Header */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-4 border-b border-gray-100 dark:border-gray-800 px-2">
-        <button onClick={onBack} className="flex items-center gap-2 text-gray-500 hover:text-pink-500 transition-colors group">
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-medium hidden md:inline">退出挑战</span>
-        </button>
-
-        <div className="flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-gray-800/50 rounded-xl w-full md:w-auto justify-center">
-          <button onClick={() => setReviewMode('article')} className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${reviewMode === 'article' ? 'bg-white dark:bg-gray-700 text-pink-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-            <BookType className="w-4 h-4" /> AI 文章模式
+    <div className="w-full max-w-6xl mx-auto flex flex-col gap-6 pb-24 animate-in fade-in slide-in-from-right-4 duration-500 px-4 sm:px-6">
+      <div className="rounded-3xl border border-gray-200/80 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-gray-800 dark:bg-gray-950/70">
+        <div className="grid grid-cols-1 items-center gap-3 lg:grid-cols-[auto_1fr_auto]">
+          <button onClick={onBack} className="inline-flex h-10 w-fit items-center gap-2 rounded-2xl px-3 text-sm font-semibold text-gray-500 transition hover:bg-gray-100 hover:text-pink-500 dark:hover:bg-gray-900">
+            <ArrowLeft className="w-5 h-5" />
+            <span>退出挑战</span>
           </button>
-          <button onClick={() => setReviewMode('cards')} className={`flex-1 md:flex-initial flex items-center justify-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${reviewMode === 'cards' ? 'bg-white dark:bg-gray-700 text-pink-500 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-            <LayoutGrid className="w-4 h-4" /> 单词卡片模式
-          </button>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-gray-200/80 bg-white/90 px-3 py-1.5 text-xs font-semibold text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-900/90 dark:text-gray-300">
-            <span className="text-gray-400 dark:text-gray-500">已完成</span>
-            <span className="text-pink-500">{completedCount} / {words.length}</span>
+          <div className="mx-auto flex w-full max-w-xl items-center gap-1 rounded-2xl bg-gray-100 p-1 dark:bg-gray-900">
+            <button onClick={() => setReviewMode('article')} className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-all ${reviewMode === 'article' ? 'bg-white text-pink-500 shadow-sm dark:bg-gray-800 dark:text-pink-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+              <BookType className="w-4 h-4" /> AI 文章模式
+            </button>
+            <button onClick={() => setReviewMode('cards')} className={`flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl px-3 text-sm font-bold transition-all ${reviewMode === 'cards' ? 'bg-white text-pink-500 shadow-sm dark:bg-gray-800 dark:text-pink-300' : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}`}>
+              <LayoutGrid className="w-4 h-4" /> 单词卡片模式
+            </button>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center text-pink-600 dark:text-pink-400">
-            {article?.article_type === 'podcast' && <Mic2 className="w-5 h-5" />}
-            {article?.article_type === 'interview' && <Headphones className="w-5 h-5" />}
-            {article?.article_type === 'debate' && <MessageSquare className="w-5 h-5" />}
-            {article?.article_type && (['blog', 'news'].includes(article.article_type)) && <BookText className="w-5 h-5" />}
-            {!article && <BrainCircuit className="w-5 h-5" />}
+
+          <div className="flex items-center justify-start gap-2 lg:justify-end">
+            <div className="inline-flex h-10 items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 text-sm font-bold text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
+              <span className="text-gray-400">已完成</span>
+              <span className="text-pink-500">{completedCount} / {words.length}</span>
+            </div>
+            <div className="inline-flex h-10 items-center gap-2 rounded-2xl bg-pink-50 px-3 text-xs font-black text-pink-600 dark:bg-pink-900/20 dark:text-pink-300">
+              {article?.article_type === 'podcast' && <Mic2 className="w-4 h-4" />}
+              {article?.article_type === 'interview' && <Headphones className="w-4 h-4" />}
+              {article?.article_type === 'debate' && <MessageSquare className="w-4 h-4" />}
+              {article?.article_type && (['blog', 'news'].includes(article.article_type)) && <BookText className="w-4 h-4" />}
+              {!article && <BrainCircuit className="w-4 h-4" />}
+              <span>{articleTypeLabel}</span>
+            </div>
           </div>
         </div>
       </div>
 
       {reviewMode === 'article' ? (
         <>
-          <header className="space-y-4 text-center py-4">
+          <header className="space-y-3 text-center py-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-pink-50 dark:bg-pink-900/20 text-pink-500 rounded-full text-[10px] font-bold ring-1 ring-pink-100 dark:ring-pink-900/30 uppercase tracking-wider">
               <Sparkles className="w-3 h-3" />
               {(article && article.content) ? `今日特供 · ${article.article_type.toUpperCase()}` : "等待内容导入"}
             </div>
-            <h1 className="text-4xl md:text-5xl font-serif font-bold leading-tight px-4">
+            <h1 className="text-3xl md:text-4xl font-serif font-bold leading-tight px-4 text-gray-900 dark:text-white">
               {(article && article.content) ? article.title : "手动导入 AI 复习内容"}
             </h1>
           </header>
 
           {article?.content ? (
-            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl relative overflow-hidden">
-               <button onClick={handleRegenerate} className="absolute top-6 right-6 z-10 flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border-2 border-pink-200 dark:border-pink-900 text-pink-600 dark:text-pink-400 rounded-xl text-sm font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all shadow-lg">
+            <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-3xl p-6 md:p-10 shadow-sm relative overflow-hidden">
+               <button onClick={handleRegenerate} className="absolute top-5 right-5 z-10 flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-pink-200 dark:border-pink-900 text-pink-600 dark:text-pink-400 rounded-xl text-xs font-bold hover:bg-pink-50 dark:hover:bg-pink-900/20 transition-all shadow-sm">
                 <Sparkles className="w-4 h-4" /> 重新生成
               </button>
               {renderContentWithHighlights()}
             </div>
           ) : (
-            <div className="space-y-8">
-               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-xl">
-                  <div className="flex items-center justify-between mb-4">
+            <div className="grid gap-4 lg:grid-cols-2">
+               <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-3xl p-5 shadow-sm">
+                  <div className="flex items-center justify-between gap-3 mb-4">
                     <div className="flex items-center gap-2">
                        <MessageSquare className="w-5 h-5 text-pink-500" />
-                       <h3 className="font-bold">1. 获取 AI 复习 Prompt</h3>
+                       <h3 className="font-bold text-gray-900 dark:text-white">1. 获取 AI 复习 Prompt</h3>
                     </div>
                     {prompt && (
-                      <button onClick={handleCopyPrompt} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${isCopied ? 'bg-green-500 text-white' : 'bg-pink-500 text-white hover:bg-pink-600'}`}>
+                      <button onClick={handleCopyPrompt} className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all ${isCopied ? 'bg-green-500 text-white' : 'bg-pink-500 text-white hover:bg-pink-600'}`}>
                          {isCopied ? <ClipboardCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                          {isCopied ? '已复制' : '复制 Prompt'}
                       </button>
                     )}
                   </div>
                   {!prompt ? (
-                    <button onClick={handleGetPrompt} disabled={isPromptLoading} className="w-full py-8 border-2 border-dashed border-gray-200 dark:border-gray-800 rounded-2xl text-gray-400 hover:text-pink-500 hover:border-pink-200 transition-all flex flex-col items-center gap-2">
+                    <button onClick={handleGetPrompt} disabled={isPromptLoading} className="flex min-h-48 w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-gray-200 bg-gray-50/70 px-4 py-8 text-gray-400 transition hover:border-pink-200 hover:bg-pink-50/40 hover:text-pink-500 disabled:cursor-not-allowed dark:border-gray-800 dark:bg-gray-950/40 dark:hover:bg-pink-950/10">
                        {isPromptLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : <Sparkles className="w-8 h-8" />}
                        <span className="font-bold">点击生成今日复习 Prompt</span>
                     </button>
                   ) : (
-                    <div className="bg-gray-50 dark:bg-black/40 rounded-2xl p-4 max-h-48 overflow-y-auto border border-gray-100 dark:border-gray-800">
+                    <div className="bg-gray-50 dark:bg-black/40 rounded-2xl p-4 h-64 overflow-y-auto border border-gray-100 dark:border-gray-800">
                        <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap font-sans leading-relaxed">{prompt}</pre>
                     </div>
                   )}
                </div>
 
-               <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-[2rem] p-6 shadow-xl space-y-4">
+               <div className="bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 rounded-3xl p-5 shadow-sm space-y-4">
                   <div className="flex items-center gap-2">
                       <FilePlus className="w-5 h-5 text-blue-500" />
-                      <h3 className="font-bold">2. 导入 AI 生成的结果 (JSON)</h3>
+                      <h3 className="font-bold text-gray-900 dark:text-white">2. 导入 AI 生成的结果 (JSON)</h3>
                   </div>
-                  <textarea value={importJson} onChange={(e) => setImportJson(e.target.value)} placeholder='在此粘贴 AI 返回的 JSON 代码块...' className="w-full h-40 bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 text-sm font-code focus:ring-2 focus:ring-pink-500 outline-none transition-all" />
-                  <button onClick={handleImport} disabled={isImporting || !importJson.trim()} className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition-all disabled:opacity-50">
+                  <textarea value={importJson} onChange={(e) => setImportJson(e.target.value)} placeholder='在此粘贴 AI 返回的 JSON 代码块...' className="w-full h-64 bg-gray-50 dark:bg-black/40 border border-gray-100 dark:border-gray-800 rounded-2xl p-4 text-sm font-code focus:ring-2 focus:ring-pink-500 outline-none transition-all resize-none" />
+                  <button onClick={handleImport} disabled={isImporting || !importJson.trim()} className="w-full py-3 bg-gray-900 text-white rounded-2xl font-bold shadow-sm hover:bg-gray-800 transition-all disabled:opacity-50 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-100">
                     {isImporting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "导入并刷新文章"}
                   </button>
                </div>

@@ -20,6 +20,9 @@
 # Local docs with sensitive notes
 README.md
 
+# CrazyHub codebase registry metadata
+code.md
+
 # Python backend local files
 __pycache__/
 *.pyc

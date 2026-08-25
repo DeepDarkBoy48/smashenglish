@@ -9,11 +9,14 @@ import {
 import type { DailyNote, SavedWord, QuickLookupResult, OtherMeaning, SavedWordEncounter } from '../types';
 import { 
   BookMarked, Clock, ChevronRight, ChevronLeft, MessageSquare, 
-  Trash2, BookOpen, Loader2, Sparkles, Calendar, ArrowLeft, BrainCircuit, ExternalLink, Download, FileJson, FileCode, Filter, Search
+  Trash2, BookOpen, Loader2, Sparkles, Calendar, ArrowLeft, BrainCircuit, ExternalLink, Download, FileJson, FileCode, Filter, Search, Copy, ChevronDown, Check
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { ReviewPage } from './ReviewPage';
 import { getSavedWordEncounters, getSavedWordLatestLookup } from '../utils/savedWords';
+
+type ExportFormat = 'md' | 'json';
+type ExportAction = 'download' | 'copy';
 
 export const SavedWordsPage: React.FC = () => {
   const [notes, setNotes] = useState<DailyNote[] | null>(null);
@@ -21,6 +24,8 @@ export const SavedWordsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSummarizing, setIsSummarizing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [openExportMenu, setOpenExportMenu] = useState<'all' | 'note' | null>(null);
+  const [exportCopiedKey, setExportCopiedKey] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
   
   // Master list states
@@ -157,41 +162,38 @@ export const SavedWordsPage: React.FC = () => {
     }
   };
 
-  const handleExportNote = (format: 'md' | 'json') => {
-    if (!selectedNote || !selectedNote.words) return;
-    const { note, words } = selectedNote;
-    let content = '';
-    let filename = `vocab_${note.day.replace(/-/g, '_')}`;
+  const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    if (format === 'md') {
-      content = `# 今日词汇 (${words.length}) - ${note.day}\n\n`;
-      words.forEach(item => {
-        const encounters = getEncounters(item);
-        content += `### ${item.word}\n\n`;
-        encounters.forEach((enc, idx) => {
-          const lookup = enc.lookup || ({} as QuickLookupResult);
-          const meaning = lookup.contextMeaning || '';
-          const englishDefinition = lookup.englishDefinition || '';
-          const pos = lookup.partOfSpeech || '';
-          const explanation = lookup.explanation || '';
-          const sourceUrl = enc.url || '';
-          const highlightedContext = (enc.context || '').replace(new RegExp(`(${item.word})`, 'gi'), '**$1**');
-          content += `#### 来源 ${idx + 1}/${encounters.length}${pos ? ` [${pos.toUpperCase()}]` : ''}\n\n`;
-          content += `**释义**: ${meaning}\n\n`;
-          if (englishDefinition) content += `**英英释义**: ${englishDefinition}\n\n`;
-          content += `> "${highlightedContext}"\n\n`;
-          content += `**AI 解析**:\n${explanation}\n\n`;
-          if (sourceUrl) content += `**来源**: [${sourceUrl}](${sourceUrl})\n\n`;
-        });
-        content += `---\n`;
+  const createWordsMarkdown = (words: SavedWord[], title: string) => {
+    let content = `# ${title} (${words.length})\n\n`;
+
+    words.forEach(item => {
+      const encounters = getEncounters(item);
+      content += `## ${item.word}\n\n`;
+      encounters.forEach((enc, idx) => {
+        const lookup = enc.lookup || ({} as QuickLookupResult);
+        const meaning = lookup.contextMeaning || '';
+        const englishDefinition = lookup.englishDefinition || '';
+        const pos = lookup.partOfSpeech || '';
+        const explanation = lookup.explanation || '';
+        const sourceUrl = enc.url || '';
+        const highlightedContext = (enc.context || '').replace(new RegExp(`(${escapeRegExp(item.word)})`, 'gi'), '**$1**');
+        content += `### 来源 ${idx + 1}/${encounters.length}${pos ? ` [${pos.toUpperCase()}]` : ''}\n\n`;
+        content += `**释义**: ${meaning}\n\n`;
+        if (englishDefinition) content += `**英英释义**: ${englishDefinition}\n\n`;
+        content += `> "${highlightedContext}"\n\n`;
+        if (explanation) content += `**AI 解析**:\n${explanation}\n\n`;
+        if (sourceUrl) content += `**来源**: [${sourceUrl}](${sourceUrl})\n\n`;
       });
-      filename += '.md';
-    } else {
-      content = JSON.stringify(words, null, 2);
-      filename += '.json';
-    }
+      content += `---\n\n`;
+    });
 
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    return content;
+  };
+
+  const downloadTextFile = (content: string, filename: string, format: ExportFormat) => {
+    const type = format === 'json' ? 'application/json;charset=utf-8' : 'text/markdown;charset=utf-8';
+    const blob = new Blob([content], { type });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -202,7 +204,35 @@ export const SavedWordsPage: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  const handleExportAll = async (format: 'md' | 'json') => {
+  const runExport = async (content: string, filename: string, format: ExportFormat, action: ExportAction, copiedKey: string) => {
+    if (action === 'copy') {
+      await navigator.clipboard.writeText(content);
+      setExportCopiedKey(copiedKey);
+      setTimeout(() => setExportCopiedKey(null), 2000);
+      return;
+    }
+
+    downloadTextFile(content, filename, format);
+  };
+
+  const handleExportNote = async (format: ExportFormat, action: ExportAction) => {
+    if (!selectedNote || !selectedNote.words) return;
+    const { note, words } = selectedNote;
+    const baseFilename = `vocab_${note.day.replace(/-/g, '_')}`;
+    const content = format === 'md'
+      ? createWordsMarkdown(words, `今日词汇 - ${note.day}`)
+      : JSON.stringify(words, null, 2);
+
+    try {
+      await runExport(content, `${baseFilename}.${format}`, format, action, `note-${action}-${format}`);
+      if (action === 'download') setOpenExportMenu(null);
+    } catch (err) {
+      console.error(err);
+      alert(action === 'copy' ? '复制失败，请检查浏览器剪贴板权限。' : '导出失败');
+    }
+  };
+
+  const handleExportAll = async (format: ExportFormat, action: ExportAction) => {
     setIsExporting(true);
     try {
       const data = await getSavedWordsService();
@@ -210,51 +240,68 @@ export const SavedWordsPage: React.FC = () => {
         alert('没有可以导出的单词');
         return;
       }
-      let content = '';
-      let filename = `smash_english_export_${new Date().toISOString().split('T')[0]}`;
 
-      if (format === 'md') {
-        content = data.words.map(item => {
-          const encounters = getEncounters(item);
-          const encounterMd = encounters.map((enc, idx) => {
-            const lookup = enc.lookup || ({} as QuickLookupResult);
-            const meaning = lookup.contextMeaning || '';
-            const englishDefinition = lookup.englishDefinition || '';
-            const pos = lookup.partOfSpeech || '';
-            const explanation = lookup.explanation || '';
-            const sourceUrl = enc.url || '';
-            const highlightedContext = (enc.context || '').replace(new RegExp(`(${item.word})`, 'gi'), '**$1**');
-            return `## 来源 ${idx + 1}/${encounters.length}${pos ? ` [${pos.toUpperCase()}]` : ''}\n\n` +
-              `**${meaning}**\n\n` +
-              (englishDefinition ? `**英英释义**: ${englishDefinition}\n\n` : '') +
-              `> "${highlightedContext}"\n\n` +
-              `**AI 解析**:\n${explanation}\n\n` +
-              (sourceUrl ? `**来源**: [${sourceUrl}](${sourceUrl})\n\n` : '');
-          }).join('');
-
-          return `# ${item.word}\n\n${encounterMd}---\n`;
-        }).join('\n');
-        filename += '.md';
-      } else {
-        content = JSON.stringify(data.words, null, 2);
-        filename += '.json';
-      }
-
-      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const baseFilename = `smash_english_export_${new Date().toISOString().split('T')[0]}`;
+      const content = format === 'md'
+        ? createWordsMarkdown(data.words, 'SmashEnglish 复习总表')
+        : JSON.stringify(data.words, null, 2);
+      await runExport(content, `${baseFilename}.${format}`, format, action, `all-${action}-${format}`);
+      if (action === 'download') setOpenExportMenu(null);
     } catch (err) {
       console.error(err);
-      alert('导出失败');
+      alert(action === 'copy' ? '复制失败，请检查浏览器剪贴板权限。' : '导出失败');
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const renderExportMenu = (
+    scope: 'all' | 'note',
+    onSelect: (format: ExportFormat, action: ExportAction) => void,
+    disabled = false
+  ) => {
+    const isOpen = openExportMenu === scope;
+    const options: Array<{ format: ExportFormat; action: ExportAction; label: string; icon: React.ReactNode }> = [
+      { format: 'md', action: 'download', label: '导出 MD 文件', icon: <Download className="w-4 h-4" /> },
+      { format: 'json', action: 'download', label: '导出 JSON 文件', icon: <FileJson className="w-4 h-4" /> },
+      { format: 'md', action: 'copy', label: '复制 MD', icon: <Copy className="w-4 h-4" /> },
+      { format: 'json', action: 'copy', label: '复制 JSON', icon: <FileCode className="w-4 h-4" /> },
+    ];
+
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpenExportMenu(isOpen ? null : scope)}
+          disabled={disabled || isExporting}
+          className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs font-bold hover:border-pink-500 hover:text-pink-500 transition-all shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isExporting && scope === 'all' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          导出/复制
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        </button>
+
+        {isOpen && (
+          <div className="absolute right-0 top-full z-30 mt-2 w-44 overflow-hidden rounded-2xl border border-gray-200 bg-white p-1.5 shadow-xl shadow-gray-900/10 dark:border-gray-800 dark:bg-gray-900">
+            {options.map((option) => {
+              const copiedKey = `${scope}-${option.action}-${option.format}`;
+              const isCopied = exportCopiedKey === copiedKey;
+              return (
+                <button
+                  key={copiedKey}
+                  type="button"
+                  onClick={() => onSelect(option.format, option.action)}
+                  className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-bold text-gray-700 transition hover:bg-pink-50 hover:text-pink-600 dark:text-gray-200 dark:hover:bg-pink-900/20 dark:hover:text-pink-300"
+                >
+                  {isCopied ? <Check className="w-4 h-4 text-green-500" /> : option.icon}
+                  <span>{isCopied ? '已复制' : option.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
   };
 
   const renderWordCard = (item: SavedWord) => {
@@ -494,16 +541,7 @@ export const SavedWordsPage: React.FC = () => {
           </button>
           
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 p-1 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
-              <button onClick={() => handleExportNote('md')} className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300">
-                <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">导出 MD</span>
-              </button>
-              <button onClick={() => handleExportNote('json')} className="flex items-center gap-2 px-2.5 py-1.5 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-xs font-bold text-gray-700 dark:text-gray-300">
-                <FileCode className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">导出 JSON</span>
-              </button>
-            </div>
+            {renderExportMenu('note', handleExportNote, !words)}
           </div>
         </div>
 
@@ -573,14 +611,7 @@ export const SavedWordsPage: React.FC = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 sm:gap-3 ml-0 sm:ml-auto">
-           <button onClick={() => handleExportAll('md')} disabled={isExporting} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs font-bold hover:border-pink-500 hover:text-pink-500 transition-all shadow-sm">
-             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-             导出 MD
-           </button>
-           <button onClick={() => handleExportAll('json')} disabled={isExporting} className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs font-bold hover:border-pink-500 hover:text-pink-500 transition-all shadow-sm">
-             {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileJson className="w-4 h-4" />}
-             导出 JSON
-           </button>
+           {renderExportMenu('all', handleExportAll)}
            <a 
              href="/words-management"
              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-pink-500 to-rose-400 text-white rounded-xl text-xs font-bold hover:shadow-lg transition-all"

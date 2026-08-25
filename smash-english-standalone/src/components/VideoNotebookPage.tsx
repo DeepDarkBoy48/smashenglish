@@ -205,7 +205,7 @@ export const VideoNotebookPage: React.FC<VideoNotebookPageProps> = ({ onSelectNo
                   {/* Content */}
                   <div className="p-4 flex flex-col flex-1">
                     <div className="flex justify-between items-start gap-2 mb-2">
-                      <h3 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-1 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
+                      <h3 className="font-bold text-gray-900 dark:text-gray-100 line-clamp-2 group-hover:text-pink-600 dark:group-hover:text-pink-400 transition-colors">
                         {notebook.title}
                       </h3>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

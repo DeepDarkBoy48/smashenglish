@@ -2,6 +2,29 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-08-26 01:10:00 +0800
+
+- Commit: pending
+- Summary: 优化查词 AI 解析的讲解质量，增强生词本导出能力，重构复习页头部布局，并完成仓库迁入 CrazyHub 后的部署配置更新。
+
+### Features
+
+- 查词「AI 深度解析」提示词改版：输出固定为【全文翻译】+【用法解析】两个小节，只讲目标词在原句中的真实用法，引用原句搭配说明词义，去除套话与百科式扩展，控制在 2-4 句有现场讲解感的中文。
+- 生词本导出升级：导出菜单支持「全部生词 / 当前笔记」两种范围，新增复制到剪贴板（Markdown / JSON），并修复单词含正则特殊字符时语境高亮报错的问题。
+- 复习页头部重构为卡片式紧凑布局：模式切换（AI 文章 / 单词卡片）与完成进度整合进同一容器，文章类型直接以文字标签展示。
+- 视频笔记本卡片标题由单行截断改为两行，长标题不再被切断。
+- 仓库迁入 CrazyHub `codebases/` 并更新部署 Skill 内的本地路径；`.gitignore` 新增排除 CrazyHub 登记文件 `code.md`；提交前按部署规范将数据库 host 保持为 `mysql-container`。
+
+### Files
+
+- `my-fastapi-app/gemini.py`
+- `smash-english-standalone/src/components/SavedWordsPage.tsx`
+- `smash-english-standalone/src/components/ReviewPage.tsx`
+- `smash-english-standalone/src/components/VideoNotebookPage.tsx`
+- `.gitignore`
+- `.agents/skills/git-commit-deploy/SKILL.md`
+- `FEATURE_LOG.md`
+
 ## 2026-04-21 11:38:00 +0800
 
 - Commit: 982ad68
