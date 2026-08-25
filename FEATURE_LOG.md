@@ -4,7 +4,7 @@
 
 ## 2026-08-26 01:10:00 +0800
 
-- Commit: pending
+- Commit: 43e1d57
 - Summary: 优化查词 AI 解析的讲解质量，增强生词本导出能力，重构复习页头部布局，并完成仓库迁入 CrazyHub 后的部署配置更新。
 
 ### Features
