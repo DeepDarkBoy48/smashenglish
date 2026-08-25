@@ -44,7 +44,8 @@ app.add_middleware(
 
 # Database configuration
 DB_CONFIG = {
-    # 'host': '47.79.43.73',
+    # 本地开发直连数据库需先建 SSH 隧道：ssh -L 3306:127.0.0.1:3306 -N zgocloud
+    # 'host': '127.0.0.1',
     'host': 'mysql-container',
     'user': 'root',
     'password': 'aZ9s8f7G3j2kL5mN',

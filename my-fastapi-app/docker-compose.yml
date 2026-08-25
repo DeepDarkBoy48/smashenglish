@@ -3,7 +3,8 @@ services:
     build: .
     container_name: my-fastapi-container
     ports:
-      - "8001:8001"
+      # 生产服务器经 main-gateway/nginx 反代，后端只对 localhost 暴露；容器间走 appnet 按名字互访
+      - "127.0.0.1:8001:8001"
     networks:
       - appnet
     environment:

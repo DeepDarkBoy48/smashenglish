@@ -1,6 +1,6 @@
 ---
 name: git-commit-deploy
-description: "在 SmashEnglish 项目需要提交并部署到服务器时使用。当前 Git 提交与推送统一走 monorepo `git@github.com:DeepDarkBoy48/smashenglish.git`；部署前先检查后端数据库 host；只要本次部署流程里使用了 git 提交或推送，必须先调用仓库内 `git-diff-feature-log` skill 维护 `FEATURE_LOG.md`；然后优先用 `ssh clawcloud`（~/.ssh/config 别名 + 密钥）登录 ClawCloud 服务器 `47.79.43.73`，按服务器实际目录执行后端与前端部署，并做容器校验。"
+description: "在 SmashEnglish 项目需要提交并部署到服务器时使用。当前 Git 提交与推送统一走 monorepo `git@github.com:DeepDarkBoy48/smashenglish.git`；部署前先检查后端数据库 host；只要本次部署流程里使用了 git 提交或推送，必须先调用仓库内 `git-diff-feature-log` skill 维护 `FEATURE_LOG.md`；然后用 `ssh zgocloud`（~/.ssh/config 别名 + 密钥）登录 ZgoCloud 服务器 `23.169.184.243`，按服务器实际目录执行后端与前端部署，并做容器校验。"
 ---
 
 # Git Commit Deploy
@@ -32,45 +32,36 @@ description: "在 SmashEnglish 项目需要提交并部署到服务器时使用�
 
 - `git@github.com:DeepDarkBoy48/smashenglish.git`
 
-服务器固定信息：
+服务器固定信息（2026-08-26 起）：
 
-- 服务商：**ClawCloud VPS**。注意不是 ZgoCloud——`~/.ssh/config` 里的 `zgocloud`（`23.169.184.243`）是另一台美国 VPS，与本项目部署无关，不要登错
-- Host: `47.79.43.73`
+- 服务商：**ZgoCloud VPS**（美国）
+- Host: `23.169.184.243`，`~/.ssh/config` 别名 `zgocloud`
 - User: `root`
-- 首选认证：`~/.ssh/config` 已配置别名 `clawcloud`（`IdentityFile ~/.ssh/id_ed25519`），直接用密钥登录
-- Password: `Hl5M;0feB+64zZ`（仅作密钥失效时的 fallback）
+- 认证：密钥（`IdentityFile ~/.ssh/id_ed25519`），无密码 fallback
+- 站点：`learn.nanopixel.uk`，由服务器上 `main-gateway`（nginx）反代到容器；后端、前端容器端口只绑定 `127.0.0.1`，容器间经 `appnet` 网络按容器名互访（前端 nginx → `my-fastapi-container:8001/fastapi/`）
+
+已退役：旧服务器 ClawCloud `47.79.43.73`（别名 `clawcloud`）于 2026 年年中停用，SSH 已不通，不要再向它部署。
 
 ## 1. 连接方式选择规则
 
-优先级固定如下：
-
-1. 首选 `ssh clawcloud`——`~/.ssh/config` 已配置别名和密钥，无需密码
-2. 密钥失效时退回 `sshpass` 密码登录
-3. 若没有 `sshpass`，再退回 `expect`
-
-快速检查：
+直接使用 `~/.ssh/config` 里配置好的别名：
 
 ```bash
-ssh -o ConnectTimeout=10 clawcloud "echo ok"
-which sshpass
+ssh zgocloud
 ```
 
-连接方式：
+快速连通性检查：
 
 ```bash
-# 首选
-ssh clawcloud
-
-# fallback
-sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
+ssh -o ConnectTimeout=10 zgocloud "echo ok"
 ```
 
 注意：服务器上不保证安装了 `rg`，远程检查默认使用 `grep`、`find`、`test`。
 
 ### 连接故障判断
 
-- 若 22 端口报 `Connection timed out during banner exchange`，但 80/8083 网站服务正常：说明服务器活着，是 sshd 或安全组层面问题（常见为 fail2ban 封禁当前 IP、sshd 异常）。此时本地重试无意义，去 ClawCloud 控制台用 VNC/救援模式检查 sshd 与防火墙。
-- 该服务器禁 ICMP，`ping` 不通不代表宕机，以 80/8083 端口探测为准。
+- 该服务器正常时 22 端口直接可连；如果连不上，先确认本机网络，再去 ZgoCloud 控制台看实例状态。
+- 网站是否正常以 `main-gateway` 容器和 `learn.nanopixel.uk` 访问为准，不要用 `ping` 判断。
 
 ## 2. 强制检查后端数据库 host
 
@@ -81,12 +72,14 @@ sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
 必须满足：
 
 - 存在并启用：`'host': 'mysql-container',`
-- 存在并注释：`# 'host': '47.79.43.73',`
+- 不存在任何启用中的直连 IP host（如 `'host': '47.79...'` / `'host': '23.169...'`）
+
+说明：ZgoCloud 上 MySQL 容器只绑定 `127.0.0.1`，本地开发如需直连数据库应走 SSH 端口转发，而不是把 IP 写进配置提交。
 
 检查命令：
 
 ```bash
-rg -n "47\.79\.43\.73|mysql-container" /Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/my-fastapi-app/main.py
+rg -n "'host'" /Users/robin/Programming/gkxt/CrazyHub/codebases/repos/smashenglish/my-fastapi-app/main.py
 ```
 
 如果不满足，先修正配置，再继续提交和部署。
@@ -119,16 +112,15 @@ git push origin main
 服务器现在固定使用 monorepo 目录：
 
 - 根目录：`/root/smashenglish/`
-- 后端目录：`/root/smashenglish/my-fastapi-app/`
+- 后端目录：`/root/smashenglish/my-fastapi-app/`（`.env` 从旧目录 `/root/FastApi/.env` 复制，含 `GEMINI_API_KEY`）
 - 前端目录：`/root/smashenglish/smash-english-standalone/`
 
-旧目录 ` /root/FastApi/ ` 和 ` /root/SmashEnglishStandalone/ ` 不再作为部署入口。后续部署不要再进入旧目录执行 `git pull`、`docker compose` 或 `docker build`。
+旧目录 `/root/FastApi/` 和 `/root/SmashEnglishStandalone/` 是 2026-08-26 迁移到 monorepo 前的双仓库布局，保留作历史备份，不再作为部署入口。后续部署不要再进入旧目录执行 `git pull`、`docker compose` 或 `docker build`。
 
 先连接服务器：
 
 ```bash
-ssh clawcloud
-# fallback: sshpass -p 'Hl5M;0feB+64zZ' ssh -o StrictHostKeyChecking=no root@47.79.43.73
+ssh zgocloud
 ```
 
 ## 5. 服务器部署
@@ -165,8 +157,10 @@ cd /root/smashenglish/smash-english-standalone/
 docker rm smash-english-container -f || true
 docker rmi smash-english-app || true
 docker build -t smash-english-app .
-docker run -d -p 8083:80 --network appnet --name smash-english-container smash-english-app
+docker run -d -p 127.0.0.1:8083:80 --network appnet --restart unless-stopped --name smash-english-container smash-english-app
 ```
+
+注意端口只绑 `127.0.0.1`：外部访问经 `main-gateway`（nginx）按域名反代，不要把 8083 直接暴露到公网。
 
 如果用户明确说只部署后端或只部署前端，就只执行对应部分。
 
@@ -205,7 +199,7 @@ docker logs --tail=100 my-fastapi-container
 2. 在根仓库执行 `git status`
 3. 如果准备提交或推送，先执行 `git-diff-feature-log`，更新 `FEATURE_LOG.md`
 4. 在根仓库完成 `git add`、`git commit`、`git push origin main`
-5. 用 `ssh clawcloud`（fallback 为 sshpass 密码）登录服务器
+5. 用 `ssh zgocloud` 登录服务器
 6. 在 `/root/smashenglish` 拉取最新代码
 7. 在新目录下执行后端、前端部署
 8. 用 `docker ps ... | grep -E ...` 做校验

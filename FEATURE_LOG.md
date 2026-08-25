@@ -2,6 +2,24 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-08-26 01:25:00 +0800
+
+- Commit: pending
+- Summary: 部署目标从已退役的 ClawCloud 迁移到 ZgoCloud 服务器，后端端口收紧为本机回环，仅经网关反代对外。
+
+### Features
+
+- 部署 Skill 的目标服务器切换为 ZgoCloud（`23.169.184.243`，`ssh zgocloud` 密钥登录），旧 ClawCloud 服务器标记为退役；数据库 host 检查规则改为禁止任何启用中的直连 IP。
+- 后端 `docker-compose.yml` 端口绑定改为 `127.0.0.1:8001:8001`：生产环境经 main-gateway nginx 反代访问，后端不再直接暴露公网。
+- `main.py` 本地开发数据库注释更新为 SSH 隧道方式（`ssh -L 3306:127.0.0.1:3306 -N zgocloud`），替换已失效的旧服务器 IP。
+
+### Files
+
+- `.agents/skills/git-commit-deploy/SKILL.md`
+- `my-fastapi-app/docker-compose.yml`
+- `my-fastapi-app/main.py`
+- `FEATURE_LOG.md`
+
 ## 2026-08-26 01:10:00 +0800
 
 - Commit: 43e1d57
