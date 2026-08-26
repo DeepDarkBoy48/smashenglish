@@ -2,6 +2,24 @@
 
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
+## 2026-08-26 09:30:00 +0800
+
+- Commit: pending
+- Summary: 按 Linear/Notion 的紧凑设计语言重做词典结果卡片，提升信息密度，首屏可见释义从 1.5 条提升到 5 条。
+
+### Features
+
+- 单词卡头部从「5xl 大字 + 独立音标行 + 56px 圆形朗读按钮 + 40px 内边距」改为一行：`text-2xl` 单词与音标基线对齐，朗读改为 32px 幽灵图标按钮。
+- 词性标签从黑底阴影大徽章改为 Notion 式小标签（`text-xs` 灰底），COCA 词频改为描边小胶囊，去掉装饰性延伸线。
+- 释义条目间距 `space-y-8` → `space-y-4`，序号缩小降色，释义正文统一 `text-sm`；例句从大圆角灰底盒（`rounded-xl p-5`）改为左边线引用样式，组间距改为 `divide-y` 细分割线。
+- 常用搭配区去掉大图标徽章和卡中套卡，改为小标题行 + 两列紧凑条目（`px-3 py-2.5`），短语与释义同行展示。
+- 卡片整体从 `rounded-[2rem] shadow-xl` 收敛为 `rounded-xl border shadow-sm`。
+
+### Files
+
+- `smash-english-standalone/src/components/DictionaryPage.tsx`
+- `FEATURE_LOG.md`
+
 ## 2026-08-26 02:15:00 +0800
 
 - Commit: 9645d22
