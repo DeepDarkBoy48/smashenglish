@@ -4,7 +4,7 @@
 
 ## 2026-08-26 09:30:00 +0800
 
-- Commit: pending
+- Commit: 8696c17
 - Summary: 按 Linear/Notion 的紧凑设计语言重做词典结果卡片，提升信息密度，首屏可见释义从 1.5 条提升到 5 条。
 
 ### Features
