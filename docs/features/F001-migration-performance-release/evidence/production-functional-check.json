@@ -1,0 +1,79 @@
+{
+  "bot_initialized": true,
+  "bot_init_failed": false,
+  "discord_login_ok": false,
+  "discord_gateway_connected": true,
+  "jda_ready": true,
+  "java_oom": false,
+  "routes": [
+    {
+      "host": "nanopixel.uk",
+      "path": "/",
+      "status": 200,
+      "bytes": 1734,
+      "cache_control": "no-cache"
+    },
+    {
+      "host": "nanopixel.uk",
+      "path": "/ai/library",
+      "status": 200,
+      "bytes": 1734,
+      "cache_control": "no-cache"
+    },
+    {
+      "host": "nanopixel.uk",
+      "path": "/api/fastapi/health",
+      "status": 200,
+      "bytes": 15,
+      "cache_control": null
+    },
+    {
+      "host": "nanopixel.uk",
+      "path": "/api/fastapi/ready",
+      "status": 200,
+      "bytes": 15,
+      "cache_control": null
+    },
+    {
+      "host": "nanopixel.uk",
+      "asset": "/assets/index-DKT2T9af.js",
+      "cache_control": "max-age=31536000",
+      "bytes": 980217
+    },
+    {
+      "host": "learn.nanopixel.uk",
+      "path": "/",
+      "status": 200,
+      "bytes": 924,
+      "cache_control": "no-cache"
+    },
+    {
+      "host": "learn.nanopixel.uk",
+      "path": "/dictionary",
+      "status": 200,
+      "bytes": 924,
+      "cache_control": "no-cache"
+    },
+    {
+      "host": "learn.nanopixel.uk",
+      "path": "/api/fastapi/health",
+      "status": 200,
+      "bytes": 15,
+      "cache_control": null
+    },
+    {
+      "host": "learn.nanopixel.uk",
+      "path": "/api/fastapi/ready",
+      "status": 200,
+      "bytes": 15,
+      "cache_control": null
+    },
+    {
+      "host": "learn.nanopixel.uk",
+      "asset": "/assets/index-g1i90JGA.js",
+      "cache_control": "max-age=31536000",
+      "bytes": 287540
+    }
+  ],
+  "expected_proxy_container_running": true
+}

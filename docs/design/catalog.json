@@ -1,0 +1,16 @@
+{
+  "title": "SmashEnglish设计中心",
+  "features": [
+    {
+      "id": "F001",
+      "title": "Work整理、性能改进与发布",
+      "href": "F001.html",
+      "status": "待用户反馈",
+      "progress": {
+        "done": 7,
+        "total": 8
+      },
+      "commit": "3c4425b627a0db7bd44e3154b14f68d4d7144b06"
+    }
+  ]
+}

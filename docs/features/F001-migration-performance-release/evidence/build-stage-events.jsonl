@@ -1,0 +1,11 @@
+{"label": "image_built", "service": "discordbot", "image": "discord-ai-bot:99bd6054f93b"}
+{"label": "image_built", "service": "robinblog-container", "image": "nanopixel-web:99bd6054f93b"}
+{"label": "image_built", "service": "my-fastapi-container", "image": "smashenglish-api:3c4425b627a0"}
+{"label": "image_built", "service": "smash-english-container", "image": "smashenglish-web:3c4425b627a0"}
+{"label": "candidate_ready", "service": "discordbot", "status": 200}
+{"label": "candidate_library", "status": 200, "bytes": 786, "json": null}
+{"label": "candidate_ready", "service": "my-fastapi-container", "status": 200}
+{"label": "candidate_daily_notes", "status": 200, "bytes": 42900, "json": null}
+{"label": "candidate_ready", "service": "robinblog-container", "status": 200}
+{"label": "candidate_ready", "service": "smash-english-container", "status": 200}
+{"label": "proxy_container_unchanged", "passed": true}

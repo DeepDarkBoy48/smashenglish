@@ -1,0 +1,12 @@
+{"label": "production_http", "service": "discordbot", "status": 200, "bytes": 15, "json": {"status": "UP"}}
+{"label": "production_http", "service": "robinblog-container", "status": 200, "bytes": 1734, "json": null}
+{"label": "production_http", "service": "my-fastapi-container", "status": 200, "bytes": 15, "json": {"status": "ok"}}
+{"label": "production_http", "service": "smash-english-container", "status": 200, "bytes": 924, "json": null}
+{"label": "library", "status": 200, "bytes": 786, "json": null}
+{"label": "daily_notes", "status": 200, "bytes": 42900, "json": null}
+{"label": "stats", "values": ["smash-english-container|4.176MiB / 3.787GiB|0.00%", "robinblog-container|4.148MiB / 3.787GiB|0.00%", "my-fastapi-container|75.41MiB / 512MiB|0.13%", "discordbot|280.6MiB / 768MiB|0.33%", "marzban-marzban-1|168.2MiB / 3.787GiB|5.91%", "main-gateway|4.148MiB / 3.787GiB|0.00%", "chroma|18.81MiB / 3.787GiB|0.00%", "mq|131.7MiB / 3.787GiB|0.18%", "redis|20.65MiB / 3.787GiB|0.18%", "mysql-container|517MiB / 3.787GiB|0.45%"]}
+{"label": "container", "service": "discordbot", "running": true, "restart_count": 0, "revision": "99bd6054f93b16d90a00991aee0adbdaf2eae2bd"}
+{"label": "container", "service": "robinblog-container", "running": true, "restart_count": 0, "revision": "99bd6054f93b16d90a00991aee0adbdaf2eae2bd"}
+{"label": "container", "service": "my-fastapi-container", "running": true, "restart_count": 0, "revision": "3c4425b627a0db7bd44e3154b14f68d4d7144b06"}
+{"label": "container", "service": "smash-english-container", "running": true, "restart_count": 0, "revision": "3c4425b627a0db7bd44e3154b14f68d4d7144b06"}
+{"label": "proxy_container_unchanged", "passed": true}
