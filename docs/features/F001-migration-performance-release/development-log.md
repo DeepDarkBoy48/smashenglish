@@ -37,6 +37,6 @@ Java连接Discord WebSocket且Finished Loading，未见OutOfMemoryError，未发
 
 先按原容器ID恢复旧版本并检查代理，随后核对已提交的发布记录及四个新容器的revision，恢复到此前验证的新版本；13:33:26–28重新启动四个应用。最终Java健康UP、FastAPI就绪ok、通过网关的图库请求（带sortBy=createtime）业务code=0；Discord网关连接和Finished Loading均有日志。原Marzban ID与启动时间保持，Mac显式代理真实出口再次通过。没有改数据库结构、丢弃数据或发送Discord测试消息。
 
-执行器本地副本已增加发布目录互斥锁，以及任何stop之前的全部服务ID和备份名称预检；已发布或名称冲突立即拒绝重入。本次只做语法验证，未再次执行切换。事件及恢复结果在ignored tmp/reactivation-check.json、tmp/reactivation-main-proxy.json留存。
+本地与服务器留档执行器已增加发布互斥锁，以及任何stop之前的全部服务ID和备份名称预检；已发布或名称冲突立即拒绝重入。本次做语法验证并更新服务器留档脚本，未再次执行切换。事件及恢复结果在ignored tmp/reactivation-check.json、tmp/reactivation-main-proxy.json留存。
 
 服务商恢复通知后的网络测速单独归F009：13:28–29仍有HF/并发超时，13:33轮顺序和并发全通过，随后增加120秒定期观察；不能用应用重启或某次快样本认定网络已经长期恢复。
