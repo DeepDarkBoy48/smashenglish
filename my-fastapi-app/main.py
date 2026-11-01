@@ -3,14 +3,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import Annotated, Optional, List
 import os
 import gemini
-import pymysql
-from pymysql.cursors import DictCursor
+from database import DB_CONFIG, get_db_connection
 import json
 from datetime import date, datetime, timedelta, timezone
 import math
 import hashlib
 from fsrs import Scheduler, Card, Rating, State
 from dotenv import load_dotenv
+from contextlib import asynccontextmanager
+from starlette.concurrency import run_in_threadpool
+import anyio.to_thread
 from schemas import (
     AnalysisRequest, AnalysisResult,
     LookupRequest, DictionaryResult,
@@ -31,7 +33,14 @@ from schemas import (
 )
 
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(app):
+    # PyMySQL是同步驱动：限制数据库工作线程，避免并发请求堆出大量连接。
+    anyio.to_thread.current_default_thread_limiter().total_tokens = int(os.getenv("DB_WORKERS", "8"))
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
@@ -42,20 +51,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Database configuration
-DB_CONFIG = {
-    # 本地开发直连数据库需先建 SSH 隧道：ssh -L 3306:127.0.0.1:3306 -N zgocloud
-    # 'host': '127.0.0.1',
-    'host': 'mysql-container',
-    'user': 'root',
-    'password': 'aZ9s8f7G3j2kL5mN',
-    'database': 'smashenglish',
-    'charset': 'utf8mb4',
-    'cursorclass': pymysql.cursors.DictCursor
-}
+@app.get('/fastapi/health')
+async def health():
+    """无外部调用的进程存活检查；数据库阻塞不应拖住事件循环。"""
+    return {'status': 'ok'}
 
-def get_db_connection():
-    return pymysql.connect(**DB_CONFIG)
+
+@app.get('/fastapi/ready')
+def ready():
+    """发布前检查真实数据库连通性，不读写用户数据。"""
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute('SELECT 1')
+        return {'status': 'ok'}
+    finally:
+        connection.close()
+
 
 def normalize_word(word: str) -> str:
     return (word or "").strip().lower()
@@ -589,8 +601,8 @@ async def quick_lookup(
     """快速上下文查词 - 返回词条并自动保存到数据库"""
     try:
         result = await gemini.quick_lookup_service(request.word, request.context, user_api_key, llm_config_overrides)
-        # 异步/后台保存
-        save_word_to_db(
+        # 保存完成后才返回；同步驱动放到工作线程，避免阻塞其他请求。
+        await run_in_threadpool(save_word_to_db,
             request.word, 
             request.context, 
             result.model_dump(), 
@@ -668,7 +680,7 @@ async def review_read_aloud(
 
 
 @app.get("/fastapi/daily-notes", response_model=DailyNotesResponse)
-async def get_daily_notes():
+def get_daily_notes():
     """获取所有日记概览卡片"""
     try:
         connection = get_db_connection()
@@ -691,7 +703,7 @@ async def get_daily_notes():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/daily-notes/{note_id}", response_model=NoteDetailResponse)
-async def get_note_detail(note_id: int):
+def get_note_detail(note_id: int):
     """获取特定卡片的详情及其单词列表"""
     try:
         connection = get_db_connection()
@@ -724,7 +736,7 @@ async def get_note_detail(note_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fastapi/review/feedback")
-async def submit_review_feedback(request: FSRSFeedbackRequest):
+def submit_review_feedback(request: FSRSFeedbackRequest):
     """提交复习反馈，使用官方 FSRS 库更新状态"""
     try:
         connection = get_db_connection()
@@ -797,62 +809,68 @@ async def submit_review_feedback(request: FSRSFeedbackRequest):
         print(f"FSRS Feedback Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def load_summary_words(note_id: int):
+    """在线程中取出词条快照，离开函数即释放数据库连接。"""
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM saved_words ORDER BY created_at DESC")
+            words_raw = cursor.fetchall()
+        words = []
+        for row in words_raw:
+            payload = ensure_v2_payload(row['word'], row.get('data'), row)
+            note_encounters = get_note_encounters(payload, note_id)
+            if not note_encounters:
+                continue
+            latest_encounter = note_encounters[0]
+            words.append({
+                "word": row['word'],
+                "context": latest_encounter.get('context') or "",
+                "url": latest_encounter.get('url'),
+                "data": latest_encounter.get('lookup') or build_lookup_payload(row['word'], payload)
+            })
+
+        return words
+    finally:
+        connection.close()
+
+
+def save_daily_summary(note_id: int, blog_result):
+    connection = get_db_connection()
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "UPDATE daily_notes SET title = %s, summary = %s, content = %s WHERE id = %s",
+                (blog_result.title, blog_result.prologue, blog_result.content, note_id),
+            )
+        connection.commit()
+    finally:
+        connection.close()
+
+
 @app.post("/fastapi/daily-notes/{note_id}/summarize")
 async def summarize_daily_note(
     note_id: int,
     user_api_key: Optional[str] = Depends(get_user_api_key),
-    llm_config_overrides: dict = Depends(get_llm_config_overrides)
+    llm_config_overrides: dict = Depends(get_llm_config_overrides),
 ):
-    """为当天的笔记生成 AI 总结博客 (更新标题、简介和内容)"""
+    """读库、AI生成、写库分开，模型等待期间不持有数据库连接。"""
     try:
-        connection = get_db_connection()
-        try:
-            with connection.cursor() as cursor:
-                # 1. 获取该 note 相关单词（基于 encounters）
-                cursor.execute("SELECT * FROM saved_words ORDER BY created_at DESC")
-                words_raw = cursor.fetchall()
-
-                words = []
-                for row in words_raw:
-                    payload = ensure_v2_payload(row['word'], row.get('data'), row)
-                    note_encounters = get_note_encounters(payload, note_id)
-                    if not note_encounters:
-                        continue
-                    latest_encounter = note_encounters[0]
-                    words.append({
-                        "word": row['word'],
-                        "context": latest_encounter.get('context') or "",
-                        "url": latest_encounter.get('url'),
-                        "data": latest_encounter.get('lookup') or build_lookup_payload(row['word'], payload)
-                    })
-
-                if not words:
-                    raise HTTPException(status_code=400, detail="No words to summarize")
-                
-                # 2. 调用 Gemini 生成结构化内容
-                blog_result = await gemini.generate_daily_summary_service(words, user_api_key, llm_config_overrides)
-                
-                # 3. 更新到数据库 (title, summary -> prologue, content)
-                cursor.execute(
-                    "UPDATE daily_notes SET title = %s, summary = %s, content = %s WHERE id = %s", 
-                    (blog_result.title, blog_result.prologue, blog_result.content, note_id)
-                )
-            
-            connection.commit()
-            return {
-                "status": "success", 
-                "title": blog_result.title,
-                "summary": blog_result.prologue,
-                "content": blog_result.content
-            }
-        finally:
-            connection.close()
+        words = await run_in_threadpool(load_summary_words, note_id)
+        if not words:
+            raise HTTPException(status_code=400, detail="No words to summarize")
+        blog_result = await gemini.generate_daily_summary_service(words, user_api_key, llm_config_overrides)
+        await run_in_threadpool(save_daily_summary, note_id, blog_result)
+        return {'status': 'success', 'title': blog_result.title,
+                'summary': blog_result.prologue, 'content': blog_result.content}
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Summarize Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.delete("/fastapi/saved-words/{word_id}")
-async def delete_saved_word(word_id: int):
+def delete_saved_word(word_id: int):
     """删除收藏的单词"""
     try:
         connection = get_db_connection()
@@ -878,7 +896,7 @@ async def delete_saved_word(word_id: int):
 
 
 @app.delete("/fastapi/saved-words/{word_id}/encounters/{encounter_key}")
-async def delete_saved_word_encounter(word_id: int, encounter_key: str):
+def delete_saved_word_encounter(word_id: int, encounter_key: str):
     """删除单词的一条来源 encounter；若无来源剩余则删除整词。"""
     try:
         connection = get_db_connection()
@@ -943,7 +961,7 @@ async def delete_saved_word_encounter(word_id: int, encounter_key: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/saved-words", response_model=SavedWordsResponse)
-async def get_all_saved_words():
+def get_all_saved_words():
     """获取所有收藏的单词（无视日期）"""
     try:
         connection = get_db_connection()
@@ -964,7 +982,7 @@ async def get_all_saved_words():
 
 
 @app.get("/fastapi/saved-words/export", response_model=SavedWordsExportResponse)
-async def export_saved_words():
+def export_saved_words():
     try:
         connection = get_db_connection()
         try:
@@ -984,7 +1002,7 @@ async def export_saved_words():
 
 
 @app.post("/fastapi/saved-words/import", response_model=SavedWordsImportResponse)
-async def import_saved_words(request: SavedWordsImportRequest):
+def import_saved_words(request: SavedWordsImportRequest):
     try:
         connection = get_db_connection()
         try:
@@ -1134,7 +1152,7 @@ async def import_saved_words(request: SavedWordsImportRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fastapi/saved-words", response_model=SavedWord)
-async def create_saved_word(word: SavedWordCreate):
+def create_saved_word(word: SavedWordCreate):
     """手动添加收藏单词"""
     try:
         connection = get_db_connection()
@@ -1224,7 +1242,7 @@ async def create_saved_word(word: SavedWordCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/fastapi/saved-words/{word_id}", response_model=SavedWord)
-async def update_saved_word(word_id: int, word: SavedWordUpdate):
+def update_saved_word(word_id: int, word: SavedWordUpdate):
     """更新收藏单词"""
     try:
         connection = get_db_connection()
@@ -1297,7 +1315,7 @@ async def update_saved_word(word_id: int, word: SavedWordUpdate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fastapi/saved-words/batch-delete")
-async def batch_delete_words(request: BatchDeleteRequest):
+def batch_delete_words(request: BatchDeleteRequest):
     """批量删除收藏的单词"""
     try:
         connection = get_db_connection()
@@ -1340,7 +1358,7 @@ async def batch_delete_words(request: BatchDeleteRequest):
 # --- Video Notebook Endpoints ---
 
 @app.post("/fastapi/notebooks", response_model=VideoNotebook)
-async def create_notebook(notebook: VideoNotebookCreate):
+def create_notebook(notebook: VideoNotebookCreate):
     """创建新的视频笔记本"""
     try:
         connection = get_db_connection()
@@ -1376,7 +1394,7 @@ async def create_notebook(notebook: VideoNotebookCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/notebooks", response_model=VideoNotebookListResponse)
-async def list_notebooks():
+def list_notebooks():
     """获取笔记本列表（不包含巨大的 srt_content）"""
     try:
         connection = get_db_connection()
@@ -1405,7 +1423,7 @@ async def list_notebooks():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/notebooks/{notebook_id}", response_model=VideoNotebook)
-async def get_notebook_detail(notebook_id: int):
+def get_notebook_detail(notebook_id: int):
     """获取笔记本详情（包含 srt_content）"""
     try:
         connection = get_db_connection()
@@ -1428,7 +1446,7 @@ async def get_notebook_detail(notebook_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/fastapi/notebooks/{notebook_id}", response_model=VideoNotebook)
-async def update_notebook(notebook_id: int, notebook: VideoNotebookUpdate):
+def update_notebook(notebook_id: int, notebook: VideoNotebookUpdate):
     """更新视频笔记本"""
     try:
         connection = get_db_connection()
@@ -1471,7 +1489,7 @@ async def update_notebook(notebook_id: int, notebook: VideoNotebookUpdate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/fastapi/notebooks/{notebook_id}")
-async def delete_notebook(notebook_id: int):
+def delete_notebook(notebook_id: int):
     """删除笔记本"""
     try:
         connection = get_db_connection()
@@ -1490,7 +1508,7 @@ async def delete_notebook(notebook_id: int):
 # --- Reading Notebook Endpoints ---
 
 @app.post("/fastapi/reading-notebooks", response_model=ReadingNotebook)
-async def create_reading_notebook(notebook: ReadingNotebookCreate):
+def create_reading_notebook(notebook: ReadingNotebookCreate):
     """创建新的精读笔记本"""
     try:
         connection = get_db_connection()
@@ -1527,7 +1545,7 @@ async def create_reading_notebook(notebook: ReadingNotebookCreate):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/reading-notebooks", response_model=ReadingNotebookListResponse)
-async def list_reading_notebooks():
+def list_reading_notebooks():
     """获取精读笔记本列表（不包含巨大的 content）"""
     try:
         connection = get_db_connection()
@@ -1556,7 +1574,7 @@ async def list_reading_notebooks():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/reading-notebooks/{notebook_id}", response_model=ReadingNotebook)
-async def get_reading_notebook_detail(notebook_id: int):
+def get_reading_notebook_detail(notebook_id: int):
     """获取精读笔记本详情（包含 content）"""
     try:
         connection = get_db_connection()
@@ -1579,7 +1597,7 @@ async def get_reading_notebook_detail(notebook_id: int):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.put("/fastapi/reading-notebooks/{notebook_id}", response_model=ReadingNotebook)
-async def update_reading_notebook(notebook_id: int, notebook: ReadingNotebookUpdate):
+def update_reading_notebook(notebook_id: int, notebook: ReadingNotebookUpdate):
     """更新精读笔记本"""
     try:
         connection = get_db_connection()
@@ -1622,7 +1640,7 @@ async def update_reading_notebook(notebook_id: int, notebook: ReadingNotebookUpd
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/fastapi/reading-notebooks/{notebook_id}")
-async def delete_reading_notebook(notebook_id: int):
+def delete_reading_notebook(notebook_id: int):
     """删除精读笔记本"""
     try:
         connection = get_db_connection()
@@ -1640,7 +1658,7 @@ async def delete_reading_notebook(notebook_id: int):
 # --- FSRS Review Endpoints ---
 
 @app.get("/fastapi/review/today", response_model=TodayReviewResponse)
-async def get_today_review():
+def get_today_review():
     """获取项目今日复习，如果不存在则立刻创建占位记录以锁定单词队列"""
     try:
         connection = get_db_connection()
@@ -1722,7 +1740,7 @@ async def get_today_review():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/fastapi/review/prompt", response_model=ReviewPromptResponse)
-async def get_review_prompt():
+def get_review_prompt():
     """获取今日复习单词的 Prompt，锁定单词队列"""
     try:
         connection = get_db_connection()
@@ -1815,7 +1833,7 @@ async def get_review_prompt():
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/fastapi/review/import")
-async def import_review_article(request: ReviewImportRequest):
+def import_review_article(request: ReviewImportRequest):
     """用户手动导入 AI 生成的文章，更新今日记录"""
     try:
         connection = get_db_connection()

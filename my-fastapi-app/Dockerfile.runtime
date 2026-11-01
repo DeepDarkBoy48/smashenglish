@@ -1,0 +1,5 @@
+# 依赖锁未改变时，从同机已验证镜像复用依赖；依赖变化应使用标准Dockerfile全量构建。
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+COPY main.py gemini.py schemas.py database.py /app/
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8001"]

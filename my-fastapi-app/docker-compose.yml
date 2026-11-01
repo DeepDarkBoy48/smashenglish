@@ -9,6 +9,12 @@ services:
       - appnet
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - DB_HOST=${DB_HOST:-mysql-container}
+      - DB_PORT=${DB_PORT:-3306}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME:-smashenglish}
+      - DB_WORKERS=${DB_WORKERS:-8}
     restart: always
 
 networks:

@@ -11,7 +11,7 @@ description: "在 SmashEnglish 项目需要提交并部署到服务器时使用�
 
 本地工作区根目录：
 
-`/Users/robin/Programming/gkxt/CrazyHub/work/smashenglish`
+`/Users/robin/Programming/gkxt/CrazyHub/work/repos/smashenglish`
 
 当前 Git 仓库只有一个，就是工作区根目录本身。提交和推送默认都在根目录执行，不再分别进入 `my-fastapi-app` 和 `smash-english-standalone` 作为独立仓库处理。
 
@@ -71,7 +71,7 @@ ssh -o ConnectTimeout=10 zgocloud "echo ok"
 
 必须满足：
 
-- 存在并启用：`'host': 'mysql-container',`
+- database.py的DB_HOST默认mysql-container，DB_PASSWORD来自环境变量；main.py复用该连接配置。
 - 不存在任何启用中的直连 IP host（如 `'host': '47.79...'` / `'host': '23.169...'`）
 
 说明：ZgoCloud 上 MySQL 容器只绑定 `127.0.0.1`，本地开发如需直连数据库应走 SSH 端口转发，而不是把 IP 写进配置提交。
@@ -89,7 +89,7 @@ rg -n "'host'" /Users/robin/Programming/gkxt/CrazyHub/work/repos/smashenglish/my
 提交、推送都在根仓库执行：
 
 ```bash
-cd /Users/robin/Programming/gkxt/CrazyHub/work/smashenglish
+cd /Users/robin/Programming/gkxt/CrazyHub/work/repos/smashenglish
 git status --short
 git add <相关文件>
 git commit -m "<message>"
@@ -154,8 +154,7 @@ docker compose up -d --build
 
 ```bash
 cd /root/smashenglish/smash-english-standalone/
-docker rm smash-english-container -f || true
-docker rmi smash-english-app || true
+# 先保留旧容器和镜像，候选健康后切换；按docs/deployment/README.md回滚流程执行。
 docker build -t smash-english-app .
 docker run -d -p 127.0.0.1:8083:80 --network appnet --restart unless-stopped --name smash-english-container smash-english-app
 ```

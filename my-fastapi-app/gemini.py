@@ -29,7 +29,7 @@ except Exception as e:
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
     print("Warning: GEMINI_API_KEY not found in environment. AI features will fail.")
-    api_key = "MISSING_API_KEY"
+    api_key = "MISSING_API_KEY"  # pragma: allowlist secret (无密钥占位，未调用外部服务)
 
 # Global default client
 default_client = genai.Client(api_key=api_key)

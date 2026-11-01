@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """
 Migrate saved_words to Aggregation v2:
@@ -19,9 +20,9 @@ from pymysql.cursors import DictCursor
 
 
 DB_CONFIG = {
-    "host": "47.79.43.73",
+    "host": os.getenv("DB_HOST", "mysql-container"),
     "user": "root",
-    "password": "aZ9s8f7G3j2kL5mN",
+    "password": os.getenv("DB_PASSWORD", ""),
     "database": "smashenglish",
     "charset": "utf8mb4",
     "cursorclass": DictCursor,

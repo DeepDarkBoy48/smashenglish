@@ -18,7 +18,6 @@
 .vscode/
 
 # Local docs with sensitive notes
-README.md
 
 # CrazyHub codebase registry metadata
 code.md
@@ -45,3 +44,8 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 *.tsbuildinfo
+
+# Work evidence and safe env template
+tmp/
+.private/
+!my-fastapi-app/.env.example

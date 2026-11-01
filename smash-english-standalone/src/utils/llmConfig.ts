@@ -1,6 +1,6 @@
 import type { ThinkingLevel, UserFeatureLLMOverrides } from '@/types';
 
-export const API_KEY_STORAGE_KEY = 'smash_gemini_api_key';
+export const API_KEY_STORAGE_KEY = 'smash_gemini_api_key'; // pragma: allowlist secret (localStorage键名)
 export const LLM_OVERRIDES_STORAGE_KEY = 'smash_gemini_llm_overrides';
 
 export const THINKING_LEVEL_OPTIONS: ThinkingLevel[] = ['default', 'minimal', 'low', 'medium', 'high'];

@@ -1,5 +1,27 @@
 # Feature Log
 
+## 2026-11-01
+
+- Commit: pending
+- Summary: 将既有前后端统一纳入Work维护，避免慢MySQL请求阻塞英语学习接口，并补齐安全可回滚发布。
+
+### Features
+
+- 24个纯数据库接口交由FastAPI线程池执行，默认8个工作线程；查词保存显式在线程中等待完成。
+- 每日摘要先读取词条并关闭连接，异步生成AI内容后再保存，模型等待期间不占用数据库连接。
+- 数据库连接配置从main.py独立到database.py，密码从环境变量读取，迁移工具同步去掉硬编码密码；加入连接与读写超时。
+- 增加进程健康、数据库就绪检查；前端哈希资源长期缓存，HTML重新验证。
+- 补齐WORK、F001、设计中心及部署说明，保留既有Git历史、前后端同仓、旧数据和原域名；发布准备备份与失败回滚。
+
+### Files
+
+- my-fastapi-app/main.py / database.py / tests/test_performance.py
+- my-fastapi-app/docker-compose.yml / Dockerfile.runtime / .env.example
+- my-fastapi-app/migrate_db.py / scripts/
+- smash-english-standalone/nginx.conf / Dockerfile.runtime
+- WORK.md / docs/ / README.md / FEATURE_LOG.md
+
+
 用于记录每次提交对应的功能级改动摘要。要求基于 `git diff` 或 `git diff --cached` 编写，重点说明“这次改进了哪些功能”，而不是简单罗列文件。
 
 ## 2026-08-26 09:30:00 +0800
