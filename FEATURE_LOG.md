@@ -2,7 +2,7 @@
 
 ## 2026-11-01
 
-- Commit: pending
+- Commit: fcc3001
 - Summary: 将既有前后端统一纳入Work维护，避免慢MySQL请求阻塞英语学习接口，并补齐安全可回滚发布。
 
 ### Features
