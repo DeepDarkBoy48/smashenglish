@@ -34,7 +34,8 @@ Required environment variable: `GEMINI_API_KEY` in a `.env` file at project root
 
 The backend is a single-file FastAPI app with no sub-routers. All code lives in `my-fastapi-app/`:
 
-- **`main.py`** - All FastAPI route handlers + all MySQL CRUD logic. Routes include `/analyze`, `/lookup`, `/quick-lookup`, `/rapid-lookup`, `/translate`, `/writing`, `/chat`, `/saved-words`, `/daily-notes`, `/video-notebooks`, `/reading-notebooks`, `/review/*`.
+- **`database.py`** - Environment-based MySQL configuration and bounded connection/read/write timeouts.
+- **`main.py`** - FastAPI route handlers + MySQL CRUD logic. Synchronous DB-only handlers use `def` (worker threads); AI handlers remain `async` and offload DB segments using `run_in_threadpool`. Routes include `/analyze`, `/lookup`, `/quick-lookup`, `/rapid-lookup`, `/translate`, `/writing`, `/chat`, `/saved-words`, `/daily-notes`, `/video-notebooks`, `/reading-notebooks`, `/review/*`.
 - **`gemini.py`** - All Gemini AI service functions. Each feature has a `get_*_config()` function returning `(model, thinking_level)`. Model constants: `DEFAULT_MODEL = 'gemini-3-flash-preview'`, `CHEAP_MODEL = 'gemini-2.5-flash-lite'`. All service functions are `async` and accept an optional `user_api_key` parameter.
 - **`schemas.py`** - All Pydantic v2 models for request/response validation and Gemini structured output schemas.
 - **`migrate_db.py`** - One-off DB migration script; run manually when adding columns.
@@ -50,3 +51,10 @@ The backend is a single-file FastAPI app with no sub-routers. All code lives in 
 **Gemini structured output**: All Gemini calls use `response_mime_type="application/json"` + `response_schema=<PydanticModel>` to get typed, validated responses directly via `response.parsed`.
 
 **Database**: MySQL at remote host, accessed via PyMySQL with `DictCursor`. No ORM. All queries are raw SQL in `main.py`.
+
+
+## Deployment and performance
+
+Read WORK.md and docs/deployment/README.md before deployment. Keep one monorepo for the React frontend and FastAPI backend. Never hardcode passwords or change source code to switch database hosts: use DB_HOST/DB_PORT/DB_USER/DB_PASSWORD/DB_NAME. Default DB_HOST is mysql-container on appnet. DB_WORKERS defaults to 8. Do not run migration scripts automatically.
+
+The offline regression suite is `python -m unittest discover -s tests -v` from my-fastapi-app. It does not call live AI or alter production data. Keep the shared MySQL, proxy and gateway rules intact; validate candidates before replacing application containers. Retain stopped rollback containers with restart disabled, plus their original docker inspect; restore the saved restart policy when rolling back.

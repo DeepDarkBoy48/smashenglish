@@ -218,11 +218,6 @@ npm run dev
 - 新功能优先落在 `smash-english-standalone` 与 `my-fastapi-app`。
 - `smash-english-purefrontend` 仅做历史参考或迁移对照，不作为主线迭代目标。
 
-## 10. 每次开发前必做
+## 10. 开发入口
 
-开发前先阅读：
-
-- `README.md`（本文件）
-- `.agents/skills/project-dev-guide/SKILL.md`
-
-如果你使用 Codex/Agent 协作，直接在需求里提到 `project-dev-guide`，让 Agent 按统一流程执行。
+先读 `AGENTS.md` 和 `WORK.md`，当前需求与验收见 `docs/features/`，运行与回滚见 `docs/deployment/README.md`。前后端统一在此仓库维护，提交与部署记录同步更新 `FEATURE_LOG.md`。

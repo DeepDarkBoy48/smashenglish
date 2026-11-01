@@ -27,3 +27,5 @@ Java连接Discord WebSocket且Finished Loading，未见OutOfMemoryError，未发
 用户验收反馈待收集。本期工程、GitHub推送和生产发布已执行，原littleWebsite代码未删除。代理网络本身的出网故障不因应用内存下降而视为已修复。
 
 设计中心已实际通过浏览器从首页卡片进入F001，中文、当前提交、7/8清单和发布结果可读；两站生产页面及词典切换、Vue图库完成加载已核对。临时预览结束清理。
+
+补充收口：四个before-release容器已确认停止且restart=no，避免开机后与新服务争抢端口。最后源码扫描仅有catalog.json中的已核验Git提交哈希被标为高熵字符串，属于版本标识误报；源代码没有新增凭据发现。开发/部署入口改为当前database.py与环境变量流程，不依赖本机未跟踪的旧说明。
