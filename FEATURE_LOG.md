@@ -219,3 +219,8 @@
 - `.agents/skills/git-diff-feature-log/SKILL.md`
 - `.agents/skills/git-diff-feature-log/scripts/prepare_feature_log_entry.sh`
 - `FEATURE_LOG.md`
+
+### 发布记录补充（2026-11-01 13:33）
+
+- 中断续接误重复切换导致应用短暂中断，已恢复到相同的已验证运行版本3c4425b；数据库就绪、网关链路和代理连续性复核通过。
+- 发布执行器增加互斥锁与stop前身份/备份名称预检，更新服务器留档，不再次执行发布。完整事件见F001开发日记。
